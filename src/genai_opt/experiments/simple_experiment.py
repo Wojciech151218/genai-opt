@@ -7,7 +7,7 @@ from genai_opt.optimizer_engine.convergence_criterion.convergence_criterion impo
     convergence_function,
 )
 from genai_opt.optimizer_engine.experiment_builder import ExperimentBuilder
-from genai_opt.optimizer_engine.experiments.float_genome import FloatGenome
+from genai_opt.experiments.float_genome import FloatGenome
 from genai_opt.optimizer_engine.metrics_collector.terminal_logger import (
     TerminalLoggerMetricsCollector,
 )
