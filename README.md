@@ -18,7 +18,7 @@ print(genai_opt.__version__)
 
 ## Development
 
-See [dev-guide.md](dev-guide.md) for the development workflow.
+See [dev-guide.md](dev-guide.md) for the development workflow and [git-versioning-guide.md](git-versioning-guide.md) for branching, commits, and releases.
 
 Run tests:
 

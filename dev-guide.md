@@ -119,6 +119,8 @@ project/
 
 # 3. Git Workflow
 
+For detailed branching, commit, and versioning rules, see [git-versioning-guide.md](git-versioning-guide.md).
+
 ## Main Branch
 
 `main` always contains:
