@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 from genai_opt.optimizer_engine.metrics_collector.metrics_collector import (
-    INVOCATION,
-    PHENOTYPE,
     MetricsCollector,
 )
-from genai_opt.optimizer_engine.population import Population
+from genai_opt.optimizer_engine.utils.types import Types as T
 
 
 class TerminalLoggerMetricsCollector(MetricsCollector):
     def collect(
         self,
-        population: Population[PHENOTYPE, INVOCATION],
+        population: T.Population,
         iteration: int,
     ) -> None:
         fitnesses = [fitness for _, fitness in population.get_genome_fitness()]
