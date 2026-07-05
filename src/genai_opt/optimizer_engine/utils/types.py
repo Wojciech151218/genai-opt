@@ -10,20 +10,20 @@ from genai_opt.optimizer_engine.metrics_collector.metrics_collector import (
 from genai_opt.optimizer_engine.population import Population as Pop
 
 P = TypeVar("PHENOTYPE")
-I = TypeVar("INVOCATION")
+Inv = TypeVar("INVOCATION")
 
-type ParentPair[P, I] = tuple[Gen[P, I], Gen[P, I]]
+type ParentPair[P, Inv] = tuple[Gen[P, Inv], Gen[P, Inv]]
 
 
 class Types:
-    type Genome = Gen[P, I]
-    type Population = Pop[P, I]
-    type ConvergenceCriterion = Callable[[Population[P, I], int], bool]
-    type InitialPopulationStrategy = Callable[[Any, ...], Pop[P, I]]
-    type MetricsCollector = MC[P, I]
-    type MutationPolicy = Callable[[Gen[P, I]], bool]
-    type ParentSelection = Callable[[Pop[P, I]], ParentPair[P, I]]
+    type Genome = Gen[P, Inv]
+    type Population = Pop[P, Inv]
+    type ConvergenceCriterion = Callable[[Population[P, Inv], int], bool]
+    type InitialPopulationStrategy = Callable[[Any, ...], Pop[P, Inv]]
+    type MetricsCollector = MC[P, Inv]
+    type MutationPolicy = Callable[[Gen[P, Inv]], bool]
+    type ParentSelection = Callable[[Pop[P, Inv]], ParentPair[P, Inv]]
     type ReproduceFn = Callable[
-        [Pop[P, I]], Pop[P, I] | Awaitable[Pop[P, I]]
+        [Pop[P, Inv]], Pop[P, Inv] | Awaitable[Pop[P, Inv]]
     ]
     type ReproductionStrategy = Callable[[ParentSelection], ReproduceFn]
