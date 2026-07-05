@@ -9,7 +9,7 @@ from genai_opt.optimizer_engine import (
     Population,
     ReproductionPolicy,
     TerminalLoggerMetricsCollector,
-    convergence_function,
+    iteration_limited_convergence,
     generational_reproduction,
     random_mutation,
     tournament_selection,
@@ -43,7 +43,7 @@ def build_simple_experiment(
             target=target,
             population_size=population_size,
         ),
-        convergence_criterion=convergence_function(iterations),
+        convergence_criterion=iteration_limited_convergence(iterations),
         mutation_policy=random_mutation(mutation_rate),
         reproduction_policy=ReproductionPolicy(
             generational_reproduction(population_size),
