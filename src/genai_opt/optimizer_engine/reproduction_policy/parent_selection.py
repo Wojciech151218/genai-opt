@@ -3,9 +3,7 @@ from __future__ import annotations
 from random import choices
 
 from genai_opt.optimizer_engine.population import Population
-from genai_opt.optimizer_engine.reproduction_policy.reproduction_strategy import (
-    ParentPair,
-)
+from genai_opt.optimizer_engine.utils.types import ParentPair
 
 
 def roulette_wheel_selection(population: Population) -> ParentPair:
