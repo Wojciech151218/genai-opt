@@ -1,25 +1,26 @@
 from __future__ import annotations
 
-from genai_opt.optimizer_engine.genome import Genome
-from typing import Callable, TypeVar, List
 import asyncio
+from collections.abc import Callable
+from typing import Generic
 
-FITNESS = TypeVar('FITNESS')
-PHENOTYPE = TypeVar('PHENOTYPE')
+from genai_opt.optimizer_engine.genome import Genome
+from genai_opt.optimizer_engine.utils.typevars import Inv, P
 
-class Population:
-    def __init__(self, population: list[Genome[PHENOTYPE, FITNESS]] | None = None):
-        self.population: list[Genome[PHENOTYPE, FITNESS]] = (
+
+class Population(Generic[P, Inv]):
+    def __init__(self, population: list[Genome[P, Inv]] | None = None):
+        self.population: list[Genome[P, Inv]] = (
             [] if population is None else population
         )
 
-    def add_genome(self, genome: Genome[PHENOTYPE,FITNESS]):
+    def add_genome(self, genome: Genome[P, Inv]) -> None:
         self.population.append(genome)
 
-    def remove_genome(self, index: int):
+    def remove_genome(self, index: int) -> None:
         self.population.pop(index)
 
-    def loop(self, lambda_function: Callable[[Genome[PHENOTYPE,FITNESS]], None]) -> None:
+    def loop(self, lambda_function: Callable[[Genome[P, Inv]], None]) -> None:
         for genome in self.population:
             lambda_function(genome)
 
@@ -30,22 +31,22 @@ class Population:
         for genome in self.population:
             genome.reset_evaluation()
 
-    type GenomeAndFitness = tuple[Genome[PHENOTYPE,FITNESS], float]
-
-    def get_genome_and_fitness(self, index: int) -> GenomeAndFitness:
+    def get_genome_and_fitness(self, index: int) -> tuple[Genome[P, Inv], float]:
         try:
             genome = self.population[index]
         except IndexError:
             raise IndexError(f"Index {index} out of range")
         return genome, genome.evaluation
 
-    def get_genome_fitness(self) -> List[GenomeAndFitness]:
-        return [self.get_genome_and_fitness(index) for index in range(len(self.population))]
+    def get_genome_fitness(self) -> list[tuple[Genome[P, Inv], float]]:
+        return [
+            self.get_genome_and_fitness(index) for index in range(len(self.population))
+        ]
 
     def get_genome_count(self) -> int:
         return len(self.population)
 
-    def merge(self, other: 'Population[PHENOTYPE,FITNESS]') -> 'Population[PHENOTYPE,FITNESS]':
+    def merge(self, other: Population[P, Inv]) -> Population[P, Inv]:
         new_population = Population()
         new_population.population = self.population + other.population
         return new_population

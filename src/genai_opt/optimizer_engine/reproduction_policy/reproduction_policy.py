@@ -1,21 +1,19 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Callable
 
-from genai_opt.optimizer_engine.population import Population
-
-ReproduceFn = Callable[
-    [Population],
-    Population | Awaitable[Population],
-]
+from genai_opt.optimizer_engine.utils.types import Types as T
 
 
 class ReproductionPolicy:
-    def __init__(self, reproduce: ReproduceFn) -> None:
-        self.reproduce = reproduce
+    def __init__(
+        self,
+        reproduction_strategy: T.ReproductionStrategy,
+        parent_selection: T.ParentSelection,
+    ) -> None:
+        self.reproduce = reproduction_strategy(parent_selection)
 
-    async def get_new_population(self, population: Population) -> Population:
+    async def get_new_population(self, population: T.Population) -> T.Population:
         result = self.reproduce(population)
         if asyncio.iscoroutine(result):
             return await result
