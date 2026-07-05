@@ -3,14 +3,14 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Generic, Self
 
-from genai_opt.optimizer_engine.utils.typevars import I, P
+from genai_opt.optimizer_engine.utils.typevars import Inv, P
 
 
-class Genome(ABC, Generic[P, I]):
+class Genome(ABC, Generic[P, Inv]):
     def __init__(self, phenotype: P):
         self.phenotype = phenotype
         self._evaluation: float | None = None
-        self._invocations: I | None = None
+        self._invocations: Inv | None = None
 
     @property
     def evaluation(self) -> float:
@@ -25,7 +25,7 @@ class Genome(ABC, Generic[P, I]):
         self._evaluation = value
 
     @abstractmethod
-    async def invoke(self) -> I:
+    async def invoke(self) -> Inv:
         raise NotImplementedError("Genome.invoke() is not implemented")
 
     @abstractmethod
@@ -37,5 +37,5 @@ class Genome(ABC, Generic[P, I]):
         raise NotImplementedError("Genome.mutate() is not implemented")
 
     @abstractmethod
-    async def crossover(self, other: Genome[P, I]) -> Self:
+    async def crossover(self, other: Genome[P, Inv]) -> Self:
         raise NotImplementedError("Genome.crossover() is not implemented")
