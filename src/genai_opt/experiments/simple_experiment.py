@@ -54,10 +54,8 @@ def build_simple_experiment(
         convergence_criterion=convergence_function(iterations),
         mutation_policy=random_mutation(mutation_rate),
         reproduction_policy=ReproductionPolicy(
-            generational_reproduction(
-                population_size,
-                tournament_selection,
-            )
+            generational_reproduction(population_size),
+            tournament_selection,
         ),
         metrics_collector=TerminalLoggerMetricsCollector(),
     )
