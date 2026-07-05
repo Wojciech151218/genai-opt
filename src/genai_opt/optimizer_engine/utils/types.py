@@ -7,17 +7,17 @@ from genai_opt.optimizer_engine.metrics_collector.metrics_collector import (
     MetricsCollector as MC,
 )
 from genai_opt.optimizer_engine.population import Population as Pop
-from genai_opt.optimizer_engine.utils.typevars import I, P
+from genai_opt.optimizer_engine.utils.typevars import Inv, P
 
 
 class Types:
-    type Genome = Gen[P, I]
-    type Population = Pop[P, I]
+    type Genome = Gen[P, Inv]
+    type Population = Pop[P, Inv]
     type Phenotype = P
     type GenomeAndFitness = tuple[Genome, float]
     type ConvergenceCriterion = Callable[[Population, int], bool]
     type InitialPopulationStrategy = Callable[[], Population]
-    type MetricsCollector = MC[P, I]
+    type MetricsCollector = MC[P, Inv]
     type MutationPolicy = Callable[[Genome], bool]
     type ParentPair = tuple[Genome, Genome]
     type ParentSelection = Callable[[Population], ParentPair]
