@@ -1,33 +1,26 @@
 from __future__ import annotations
 
-from typing import Callable, TypeVar
+from typing import Generic
 
-from genai_opt.optimizer_engine.genome import Genome
-from genai_opt.optimizer_engine.metrics_collector.metrics_collector import (
-    MetricsCollector,
-)
 from genai_opt.optimizer_engine.population import Population
 from genai_opt.optimizer_engine.reproduction_policy.reproduction_policy import (
     ReproductionPolicy,
 )
+from genai_opt.optimizer_engine.utils.typevars import Inv, P
+from genai_opt.optimizer_engine.utils.types import Types as T
 
-INVOCATION = TypeVar("INVOCATION")
-PHENOTYPE = TypeVar("PHENOTYPE")
 
-
-class Engine:
+class Engine(Generic[P, Inv]):
     def __init__(
         self,
-        population: Population[PHENOTYPE, INVOCATION],
-        convergence_criterion: Callable[
-            [Population[PHENOTYPE, INVOCATION], int], bool
-        ],
-        mutation_policy: Callable[[Genome[PHENOTYPE, INVOCATION]], bool],
+        population: Population[P, Inv],
+        convergence_criterion: T.ConvergenceCriterion,
+        mutation_policy: T.MutationPolicy,
         reproduction_policy: ReproductionPolicy,
-        metrics_collector: MetricsCollector,
+        metrics_collector: T.MetricsCollector,
     ):
-        self.population: Population[PHENOTYPE, INVOCATION] = population
-        self.offspring_population: Population[PHENOTYPE, INVOCATION] = Population()
+        self.population: Population[P, Inv] = population
+        self.offspring_population: Population[P, Inv] = Population()
         self.iteration: int = 0
 
         self.metrics_collector = metrics_collector
@@ -57,7 +50,7 @@ class Engine:
     def _clear_helper_populations(self) -> None:
         self.offspring_population = Population()
 
-    async def run(self) -> Population[PHENOTYPE, INVOCATION]:
+    async def run(self) -> Population[P, Inv]:
         while not self.convergence_criterion(self.population, self.iteration):
             self._clear_helper_populations()
 

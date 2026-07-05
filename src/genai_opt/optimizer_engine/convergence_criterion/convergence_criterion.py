@@ -1,19 +1,12 @@
 from __future__ import annotations
 
-from typing import Callable, TypeVar
-
-from genai_opt.optimizer_engine.population import Population
-
-INVOCATION = TypeVar("INVOCATION")
-PHENOTYPE = TypeVar("PHENOTYPE")
+from genai_opt.optimizer_engine.utils.types import Types as T
 
 
-def convergence_function(
+def iteration_limited_convergence(
     iteration_limit: int,
-) -> Callable[[Population[PHENOTYPE, INVOCATION], int], bool]:
-    def is_converged(
-        population: Population[PHENOTYPE, INVOCATION], iteration: int
-    ) -> bool:
+) -> T.ConvergenceCriterion:
+    def is_converged(population: T.Population, iteration: int) -> bool:
         return iteration >= iteration_limit
 
     return is_converged

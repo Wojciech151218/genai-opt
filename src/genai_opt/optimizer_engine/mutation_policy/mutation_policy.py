@@ -1,18 +1,12 @@
 from __future__ import annotations
 
 from random import random
-from typing import Callable, TypeVar
 
-from genai_opt.optimizer_engine.genome import Genome
-
-INVOCATION = TypeVar("INVOCATION")
-PHENOTYPE = TypeVar("PHENOTYPE")
+from genai_opt.optimizer_engine.utils.types import Types as T
 
 
-def random_mutation(
-    threshold: float,
-) -> Callable[[Genome[PHENOTYPE, INVOCATION]], bool]:
-    def should_mutate(genome: Genome[PHENOTYPE, INVOCATION]) -> bool:
+def random_mutation(threshold: float) -> T.MutationPolicy:
+    def should_mutate(genome: T.Genome) -> bool:
         return random() < threshold
 
     return should_mutate

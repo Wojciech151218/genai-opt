@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 
-from genai_opt.optimizer_engine.population import Population
 from genai_opt.optimizer_engine.utils.types import Types as T
 
 
@@ -14,7 +13,7 @@ class ReproductionPolicy:
     ) -> None:
         self.reproduce = reproduction_strategy(parent_selection)
 
-    async def get_new_population(self, population: Population) -> Population:
+    async def get_new_population(self, population: T.Population) -> T.Population:
         result = self.reproduce(population)
         if asyncio.iscoroutine(result):
             return await result

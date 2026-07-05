@@ -1,31 +1,23 @@
 from __future__ import annotations
 
-from typing import Callable, TypeVar
+from typing import Generic
 
 from genai_opt.optimizer_engine.engine import Engine
-from genai_opt.optimizer_engine.genome import Genome
-from genai_opt.optimizer_engine.metrics_collector.metrics_collector import (
-    MetricsCollector,
-)
-from genai_opt.optimizer_engine.population import Population
 from genai_opt.optimizer_engine.reproduction_policy.reproduction_policy import (
     ReproductionPolicy,
 )
+from genai_opt.optimizer_engine.utils.typevars import Inv, P
+from genai_opt.optimizer_engine.utils.types import Types as T
 
-INVOCATION = TypeVar("INVOCATION")
-PHENOTYPE = TypeVar("PHENOTYPE")
 
-
-class ExperimentBuilder:
+class ExperimentBuilder(Generic[P, Inv]):
     def __init__(
         self,
-        inital_population_strategy: Callable[[], Population[PHENOTYPE, INVOCATION]],
-        convergence_criterion: Callable[
-            [Population[PHENOTYPE, INVOCATION], int], bool
-        ],
-        mutation_policy: Callable[[Genome[PHENOTYPE, INVOCATION]], bool],
+        inital_population_strategy: T.InitialPopulationStrategy,
+        convergence_criterion: T.ConvergenceCriterion,
+        mutation_policy: T.MutationPolicy,
         reproduction_policy: ReproductionPolicy,
-        metrics_collector: MetricsCollector,
+        metrics_collector: T.MetricsCollector,
     ):
         self.inital_population_strategy = inital_population_strategy
         self.convergence_criterion = convergence_criterion
@@ -33,7 +25,7 @@ class ExperimentBuilder:
         self.reproduction_policy = reproduction_policy
         self.metrics_collector = metrics_collector
 
-    def build(self) -> Engine:
+    def build(self) -> Engine[P, Inv]:
         return Engine(
             self.inital_population_strategy(),
             self.convergence_criterion,

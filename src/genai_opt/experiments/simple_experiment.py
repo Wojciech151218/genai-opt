@@ -3,24 +3,16 @@ from __future__ import annotations
 import asyncio
 from random import uniform
 
-from genai_opt.optimizer_engine.convergence_criterion.convergence_criterion import (
-    convergence_function,
-)
-from genai_opt.optimizer_engine.experiment_builder import ExperimentBuilder
-from genai_opt.experiments.float_genome import FloatGenome
-from genai_opt.optimizer_engine.metrics_collector.terminal_logger import (
-    TerminalLoggerMetricsCollector,
-)
-from genai_opt.optimizer_engine.mutation_policy.mutation_policy import random_mutation
-from genai_opt.optimizer_engine.population import Population
-from genai_opt.optimizer_engine.reproduction_policy.parent_selection import (
-    tournament_selection,
-)
-from genai_opt.optimizer_engine.reproduction_policy.reproduction_policy import (
+from genai_opt.experiments import FloatGenome
+from genai_opt.optimizer_engine import (
+    ExperimentBuilder,
+    Population,
     ReproductionPolicy,
-)
-from genai_opt.optimizer_engine.reproduction_policy.reproduction_strategy import (
+    TerminalLoggerMetricsCollector,
+    iteration_limited_convergence,
     generational_reproduction,
+    random_mutation,
+    tournament_selection,
 )
 
 TARGET_VALUE = 50.0
@@ -51,7 +43,7 @@ def build_simple_experiment(
             target=target,
             population_size=population_size,
         ),
-        convergence_criterion=convergence_function(iterations),
+        convergence_criterion=iteration_limited_convergence(iterations),
         mutation_policy=random_mutation(mutation_rate),
         reproduction_policy=ReproductionPolicy(
             generational_reproduction(population_size),
