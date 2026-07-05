@@ -2,7 +2,9 @@ from genai_opt.optimizer_engine.engine import Engine
 from genai_opt.optimizer_engine.experiment_builder import ExperimentBuilder
 from genai_opt.optimizer_engine.genome import Genome
 from genai_opt.optimizer_engine.population import Population
-from genai_opt.optimizer_engine.convergence_criterion import convergence_function
+from genai_opt.optimizer_engine.convergence_criterion import (
+    iteration_limited_convergence,
+)
 from genai_opt.optimizer_engine.metrics_collector.terminal_logger import (
     TerminalLoggerMetricsCollector,
 )
@@ -20,7 +22,7 @@ __all__ = [
     "Population",
     "ReproductionPolicy",
     "TerminalLoggerMetricsCollector",
-    "convergence_function",
+    "iteration_limited_convergence",
     "generational_reproduction",
     "random_mutation",
     "tournament_selection",
