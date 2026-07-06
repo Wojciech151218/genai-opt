@@ -25,7 +25,8 @@ class Population(Generic[P, Inv]):
             lambda_function(genome)
 
     async def evaluate_population(self) -> None:
-        await asyncio.gather(*[genome.evaluate() for genome in self.population])
+        await asyncio.gather(*[genome._invoke() for genome in self.population])
+        await asyncio.gather(*[genome._evaluate() for genome in self.population])
 
     def reset_evaluations(self) -> None:
         for genome in self.population:
