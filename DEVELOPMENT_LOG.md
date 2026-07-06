@@ -18,3 +18,21 @@ academic evaluation and team collaboration.
 **Notes:**
 
 - Scaffold follows the structure defined in [dev-guide.md](dev-guide.md).
+
+---
+
+## 2026-07-06 - Initial MkDocs documentation
+
+**Goal:** Add the first local documentation site for the project.
+
+**Completed:**
+
+- Added `mkdocs.yml`
+- Added initial documentation pages in `docs/`
+- Documented installation, usage, API overview, and development workflow
+- Verified the documentation with `mkdocs build`
+
+**Notes:**
+
+- This is the first documentation scaffold and can be expanded as the public
+  API stabilizes.

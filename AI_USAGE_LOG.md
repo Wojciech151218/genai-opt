@@ -5,3 +5,4 @@ Record of significant AI assistance for academic transparency.
 | Date | Tool | Used for | Result |
 |------|------|----------|--------|
 | 2026-07-01 | AI assistant | Initial project scaffold structure | Scaffold created and reviewed against dev-guide.md |
+| 2026-07-06 | AI assistant | Initial MkDocs documentation scaffold structure | Documentation scaffold created and reviewed against dev-guide.md |
