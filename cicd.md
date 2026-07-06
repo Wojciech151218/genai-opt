@@ -145,18 +145,21 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e .
-          pip install pytest ruff
+          pip install -e ".[dev]"
 
 
       - name: Run tests
         run: |
-          pytest
+          pytest --cov=src/genai_opt --cov-report=term-missing
 
 
       - name: Check code style
         run: |
           ruff check .
+
+      - name: Check formatting
+        run: |
+          ruff format --check .
 ```
 
 ---
@@ -313,26 +316,21 @@ Add to workflow:
 
 ---
 
-# 11. Optional: Add Type Checking
+# 11. Advanced Quality Checks
 
-Install:
+We use `pre-commit` and `Dependabot` to catch issues before CI even runs, and to keep dependencies updated.
 
-```bash
-pip install mypy
-```
+## Pre-commit
 
-Run:
+Installs git hooks to run `ruff` on every commit automatically:
 
 ```bash
-mypy src/
+pre-commit install
 ```
 
-Add:
+## Dependabot
 
-```yaml
-- name: Type check
-  run: mypy src/
-```
+A `.github/dependabot.yml` file is used to automatically check for Python package updates weekly and create Pull Requests.
 
 ---
 

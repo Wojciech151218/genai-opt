@@ -6,8 +6,8 @@ from genai_opt.optimizer_engine.engine import Engine
 from genai_opt.optimizer_engine.reproduction_policy.reproduction_policy import (
     ReproductionPolicy,
 )
-from genai_opt.optimizer_engine.utils.typevars import Inv, P
 from genai_opt.optimizer_engine.utils.types import Types as T
+from genai_opt.optimizer_engine.utils.typevars import Inv, P
 
 
 class ExperimentBuilder(Generic[P, Inv]):

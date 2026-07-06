@@ -8,8 +8,6 @@ from langchain.chat_models import init_chat_model
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
-from typing import Awaitable
-from langchain_core.prompts import ChatPromptTemplate
 
 from genai_opt.adapters.simple_system_prompt_genome import (
     SimpleSystemPromptGenome,
@@ -106,23 +104,36 @@ Prompt B:
 Return one unified system prompt."""
 
 EVALUATE_PROMPT = """\
-You are a haiku judge.
+You judge haiku outputs for an evolutionary optimizer.
 
 Score the candidate on:
 - Poetic quality (imagery, rhythm, restraint)
+- Syllable structure (classic 5-7-5 intent in English)
 - Cultural significance (kigo, tradition, aesthetics, specific cultural context)
 
-"""
+Candidate output (JSON):
+{output}
+
+Return a score from 0 to 100. Reserve 90+ for masterful, culturally grounded haiku."""
+
+
+class HaikuOutput(BaseModel):
+    line_one: str = Field(description="First line (~5 syllables)")
+    line_two: str = Field(description="Second line (~7 syllables)")
+    line_three: str = Field(description="Third line (~5 syllables)")
+    cultural_reference: str = Field(
+        description="The Japanese tradition, festival, aesthetic, or symbol referenced"
+    )
+    significance: str = Field(
+        description="One sentence on why the haiku carries cultural weight"
+    )
+
 
 class HaikuEvaluation(BaseModel):
-    cultural_reference: list[str] = Field(
-        description="list of the Japanese tradition, festival, aesthetic, or symbol referenced"
+    score: float = Field(
+        description="Overall fitness from 0 to 100 for poetic and cultural quality"
     )
-    significance: int = Field(
-        description="your judgement of the significance of the haiku",
-        ge=0,
-        le=10
-    )
+
 
 def create_llm(
     model: str = DEFAULT_MODEL,
@@ -130,31 +141,7 @@ def create_llm(
 ) -> BaseChatModel:
     return init_chat_model(model, temperature=temperature)
 
-async def evaluate_function(invocation: HaikuOutput) -> Awaitable[float]:
-    first_line_words_is_valid = len(invocation.line_one.split()) == 5
-    second_line_words_is_valid = len(invocation.line_two.split()) == 7
-    third_line_words_is_valid = len(invocation.line_three.split()) == 5
-    is_haiku_valid = first_line_words_is_valid and second_line_words_is_valid and third_line_words_is_valid
-    
 
-    haiku = f"{invocation.line_one} {invocation.line_two} {invocation.line_three}"
-
-    structured_llm = create_llm().with_structured_output(HaikuEvaluation)
-    prompt_template = ChatPromptTemplate.from_template([
-        ("system", EVALUATE_PROMPT),
-        ("user", haiku),
-    ])
-    result = await ( prompt_template | structured_llm).ainvoke()
-
-    return 0.0 if is_haiku_valid else 1.0 * len(result.cultural_reference) *  result.significance 
-
-   
-
-class HaikuOutput(BaseModel):
-    line_one: str = Field(description="First line (~5 syllables)")
-    line_two: str = Field(description="Second line (~7 syllables)")
-    line_three: str = Field(description="Third line (~5 syllables)")
-    
 def build_haiku_task_message(theme: str | None = None) -> HumanMessage:
     topic = theme or choice(CULTURAL_THEMES)
     return HumanMessage(
@@ -196,6 +183,7 @@ def create_initial_population(
         lambda seed: create_haiku_genome(llm, seed, task_message=task_message),
         population_size=population_size,
     )
+
 
 def build_haiku_experiment(
     llm: BaseChatModel,

@@ -9,8 +9,8 @@ from genai_opt.optimizer_engine import (
     Population,
     ReproductionPolicy,
     TerminalLoggerMetricsCollector,
-    iteration_limited_convergence,
     generational_reproduction,
+    iteration_limited_convergence,
     random_mutation,
     tournament_selection,
 )

@@ -164,6 +164,7 @@ Good:
 - Add unit tests
 - Improve documentation
 
+*Note: This project uses `pre-commit` hooks. If your commit is blocked due to formatting, simply review the changes, `git add .`, and commit again.*
 
 Bad:
 
@@ -243,6 +244,11 @@ If a bug is fixed:
 1. Add a test reproducing it
 2. Fix the code
 3. Ensure the test passes
+
+To check tests and test coverage locally:
+```bash
+pytest --cov=src/genai_opt --cov-report=term-missing
+```
 
 ---
 
