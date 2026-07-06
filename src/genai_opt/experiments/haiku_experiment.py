@@ -124,9 +124,9 @@ class HaikuEvaluation(BaseModel):
         description="List of the Japanese tradition, festival, aesthetic, or symbol referenced"
     )
     significance: int = Field(
-        description="Your judgement of the cultural significance of the haiku",
+        description="Your judgement of the cultural significance of the haiku from 0 to 100",
         ge=0,
-        le=10,
+        le=100,
     )
 
 
