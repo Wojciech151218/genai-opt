@@ -26,6 +26,8 @@ from genai_opt.optimizer_engine import (
     Population,
     ReproductionPolicy,
     TerminalLoggerMetricsCollector,
+    cycle_seeds_initial_population,
+    cycle_seeds_initial_population_strategy,
     generational_reproduction,
     iteration_limited_convergence,
     random_mutation,
@@ -146,24 +148,13 @@ async def evaluate_function(invocation: HaikuOutput) -> Awaitable[float]:
 
     return 0.0 if is_haiku_valid else 1.0 * len(result.cultural_reference) *  result.significance 
 
-
-
-
-
-    
+   
 
 class HaikuOutput(BaseModel):
     line_one: str = Field(description="First line (~5 syllables)")
     line_two: str = Field(description="Second line (~7 syllables)")
     line_three: str = Field(description="Third line (~5 syllables)")
     
-
-
-
-
-
-
-
 def build_haiku_task_message(theme: str | None = None) -> HumanMessage:
     topic = theme or choice(CULTURAL_THEMES)
     return HumanMessage(
@@ -200,18 +191,11 @@ def create_initial_population(
     shared_task: HumanMessage | None = None,
 ) -> Population[SimpleSystemPromptPhenotype, HaikuOutput]:
     task_message = shared_task or build_haiku_task_message()
-    population = Population()
-    for index in range(population_size):
-        seed_prompt = SEED_SYSTEM_PROMPTS[index % len(SEED_SYSTEM_PROMPTS)]
-        population.add_genome(
-            create_haiku_genome(
-                llm,
-                seed_prompt,
-                task_message=task_message,
-            )
-        )
-    return population
-
+    return cycle_seeds_initial_population(
+        SEED_SYSTEM_PROMPTS,
+        lambda seed: create_haiku_genome(llm, seed, task_message=task_message),
+        population_size=population_size,
+    )
 
 def build_haiku_experiment(
     llm: BaseChatModel,
@@ -223,10 +207,10 @@ def build_haiku_experiment(
 ) -> ExperimentBuilder[SimpleSystemPromptPhenotype, HaikuOutput]:
     task_message = shared_task or build_haiku_task_message()
     return ExperimentBuilder(
-        inital_population_strategy=lambda: create_initial_population(
-            llm,
+        inital_population_strategy=cycle_seeds_initial_population_strategy(
+            SEED_SYSTEM_PROMPTS,
+            lambda seed: create_haiku_genome(llm, seed, task_message=task_message),
             population_size=population_size,
-            shared_task=task_message,
         ),
         convergence_criterion=iteration_limited_convergence(iterations),
         mutation_policy=random_mutation(mutation_rate),
