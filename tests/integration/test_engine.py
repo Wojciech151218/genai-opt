@@ -1,7 +1,7 @@
 import asyncio
 
 from genai_opt.optimizer_engine.engine import Engine
-from genai_opt.optimizer_engine.convergence_criterion.convergence_criterion import convergence_function
+from genai_opt.optimizer_engine.convergence_criterion.convergence_criterion import iteration_limited_convergence
 from genai_opt.optimizer_engine.mutation_policy.mutation_policy import random_mutation
 from genai_opt.optimizer_engine.reproduction_policy.reproduction_policy import ReproductionPolicy
 from genai_opt.optimizer_engine.reproduction_policy.reproduction_strategy import generational_reproduction
@@ -17,9 +17,12 @@ def _build_test_engine(iterations=5):
     genomes = [FloatGenome(phenotype=float(v), target=target) for v in range(10, 110, 10)]
     population = Population(genomes)
 
-    convergence_criterion = convergence_function(iterations)
+    convergence_criterion = iteration_limited_convergence(iterations)
     mutation_policy = random_mutation(0.3)
-    reproduction_policy = ReproductionPolicy(generational_reproduction(10, tournament_selection))
+    reproduction_policy = ReproductionPolicy(
+        generational_reproduction(10),
+        tournament_selection,
+    )
     metrics_collector = TerminalLoggerMetricsCollector()
 
     return Engine(
