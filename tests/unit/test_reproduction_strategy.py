@@ -19,6 +19,6 @@ def test_generational_reproduction_size():
         pop.add_genome(FloatGenome(val, target=50.0))
     asyncio.run(pop.evaluate_population())
 
-    reproduce = generational_reproduction(5, tournament_selection)
+    reproduce = generational_reproduction(5)(tournament_selection)
     new_pop = asyncio.run(reproduce(pop))
     assert new_pop.get_genome_count() == 5
