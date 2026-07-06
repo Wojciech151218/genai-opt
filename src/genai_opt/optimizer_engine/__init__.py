@@ -4,6 +4,10 @@ from genai_opt.optimizer_engine.convergence_criterion import (
 from genai_opt.optimizer_engine.engine import Engine
 from genai_opt.optimizer_engine.experiment_builder import ExperimentBuilder
 from genai_opt.optimizer_engine.genome import Genome
+from genai_opt.optimizer_engine.initial_population import (
+    cycle_seeds_initial_population,
+    cycle_seeds_initial_population_strategy,
+)
 from genai_opt.optimizer_engine.metrics_collector.terminal_logger import (
     TerminalLoggerMetricsCollector,
 )
@@ -22,6 +26,8 @@ __all__ = [
     "Population",
     "ReproductionPolicy",
     "TerminalLoggerMetricsCollector",
+    "cycle_seeds_initial_population",
+    "cycle_seeds_initial_population_strategy",
     "generational_reproduction",
     "iteration_limited_convergence",
     "random_mutation",

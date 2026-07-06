@@ -9,15 +9,23 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 
-from genai_opt.adapters.genomes.simple_system_prompt_genome import (
+from genai_opt.adapters.simple_system_prompt_genome import (
     SimpleSystemPromptGenome,
+    SimpleSystemPromptPhenotype,
     SystemPrompt,
+    crossover_prompt_function,
+    evaluate_prompt_function,
+    invoke_task_message_function,
+    mutate_prompt_function,
+    render_system_prompt,
 )
 from genai_opt.optimizer_engine import (
     ExperimentBuilder,
     Population,
     ReproductionPolicy,
     TerminalLoggerMetricsCollector,
+    cycle_seeds_initial_population,
+    cycle_seeds_initial_population_strategy,
     generational_reproduction,
     iteration_limited_convergence,
     random_mutation,
@@ -145,15 +153,15 @@ def create_haiku_genome(
     *,
     task_message: HumanMessage | None = None,
 ) -> SimpleSystemPromptGenome[HaikuOutput]:
+    task = task_message or build_haiku_task_message()
+    phenotype = SimpleSystemPromptPhenotype(system_prompt=system_prompt, llm=llm)
     return SimpleSystemPromptGenome(
-        llm=llm,
-        system_prompt=system_prompt,
+        phenotype=phenotype,
         invocation_schema=HaikuOutput,
-        evaluation_schema=HaikuEvaluation,
-        task_message=task_message or build_haiku_task_message(),
-        mutate_prompt=MUTATE_PROMPT,
-        crossover_prompt=CROSSOVER_PROMPT,
-        evaluate_prompt=EVALUATE_PROMPT,
+        invoke_function=invoke_task_message_function(task, HaikuOutput),
+        evaluate_function=evaluate_prompt_function(EVALUATE_PROMPT, llm, HaikuEvaluation),
+        mutate_function=mutate_prompt_function(MUTATE_PROMPT, llm),
+        crossover_function=crossover_prompt_function(CROSSOVER_PROMPT, llm),
     )
 
 
@@ -162,19 +170,13 @@ def create_initial_population(
     population_size: int = DEFAULT_POPULATION_SIZE,
     *,
     shared_task: HumanMessage | None = None,
-) -> Population[SystemPrompt, HaikuOutput]:
+) -> Population[SimpleSystemPromptPhenotype, HaikuOutput]:
     task_message = shared_task or build_haiku_task_message()
-    population = Population()
-    for index in range(population_size):
-        seed_prompt = SEED_SYSTEM_PROMPTS[index % len(SEED_SYSTEM_PROMPTS)]
-        population.add_genome(
-            create_haiku_genome(
-                llm,
-                seed_prompt,
-                task_message=task_message,
-            )
-        )
-    return population
+    return cycle_seeds_initial_population(
+        SEED_SYSTEM_PROMPTS,
+        lambda seed: create_haiku_genome(llm, seed, task_message=task_message),
+        population_size=population_size,
+    )
 
 
 def build_haiku_experiment(
@@ -184,13 +186,13 @@ def build_haiku_experiment(
     mutation_rate: float = DEFAULT_MUTATION_RATE,
     population_size: int = DEFAULT_POPULATION_SIZE,
     shared_task: HumanMessage | None = None,
-) -> ExperimentBuilder[SystemPrompt, HaikuOutput]:
+) -> ExperimentBuilder[SimpleSystemPromptPhenotype, HaikuOutput]:
     task_message = shared_task or build_haiku_task_message()
     return ExperimentBuilder(
-        inital_population_strategy=lambda: create_initial_population(
-            llm,
+        inital_population_strategy=cycle_seeds_initial_population_strategy(
+            SEED_SYSTEM_PROMPTS,
+            lambda seed: create_haiku_genome(llm, seed, task_message=task_message),
             population_size=population_size,
-            shared_task=task_message,
         ),
         convergence_criterion=iteration_limited_convergence(iterations),
         mutation_policy=random_mutation(mutation_rate),
@@ -210,7 +212,7 @@ async def run_haiku_experiment(
     mutation_rate: float = DEFAULT_MUTATION_RATE,
     population_size: int = DEFAULT_POPULATION_SIZE,
     shared_task: HumanMessage | None = None,
-) -> Population[SystemPrompt, HaikuOutput]:
+) -> Population[SimpleSystemPromptPhenotype, HaikuOutput]:
     chat_model = llm or create_llm(model=model)
     engine = build_haiku_experiment(
         chat_model,
@@ -228,14 +230,14 @@ def format_haiku(haiku: HaikuOutput) -> str:
     )
 
 
-def print_best_result(population: Population[SystemPrompt, HaikuOutput]) -> None:
+def print_best_result(population: Population[SimpleSystemPromptPhenotype, HaikuOutput]) -> None:
     best_genome, best_fitness = max(
         population.get_genome_fitness(),
         key=lambda item: item[1],
     )
     haiku = best_genome.invocation
     print("\n=== Best evolved system prompt ===")
-    print(best_genome.phenotype)
+    print(render_system_prompt(best_genome.phenotype.system_prompt))
     print(f"\nFitness: {best_fitness:.2f}")
     print("\n=== Sample haiku ===")
     print(format_haiku(haiku))
