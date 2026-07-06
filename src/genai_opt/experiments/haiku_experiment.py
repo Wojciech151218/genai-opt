@@ -8,10 +8,18 @@ from langchain.chat_models import init_chat_model
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
+from typing import Awaitable
+from langchain_core.prompts import ChatPromptTemplate
 
 from genai_opt.adapters.genomes.simple_system_prompt_genome import (
     SimpleSystemPromptGenome,
+    SimpleSystemPromptPhenotype,
     SystemPrompt,
+    crossover_prompt_function,
+    evaluate_prompt_function,
+    invoke_task_message_function,
+    mutate_prompt_function,
+    _render_system_prompt,
 )
 from genai_opt.optimizer_engine import (
     ExperimentBuilder,
@@ -96,42 +104,64 @@ Prompt B:
 Return one unified system prompt."""
 
 EVALUATE_PROMPT = """\
-You judge haiku outputs for an evolutionary optimizer.
+You are a haiku judge.
 
 Score the candidate on:
 - Poetic quality (imagery, rhythm, restraint)
-- Syllable structure (classic 5-7-5 intent in English)
 - Cultural significance (kigo, tradition, aesthetics, specific cultural context)
 
-Candidate output (JSON):
-{output}
-
-Return a score from 0 to 100. Reserve 90+ for masterful, culturally grounded haiku."""
-
-
-class HaikuOutput(BaseModel):
-    line_one: str = Field(description="First line (~5 syllables)")
-    line_two: str = Field(description="Second line (~7 syllables)")
-    line_three: str = Field(description="Third line (~5 syllables)")
-    cultural_reference: str = Field(
-        description="The Japanese tradition, festival, aesthetic, or symbol referenced"
-    )
-    significance: str = Field(
-        description="One sentence on why the haiku carries cultural weight"
-    )
-
+"""
 
 class HaikuEvaluation(BaseModel):
-    score: float = Field(
-        description="Overall fitness from 0 to 100 for poetic and cultural quality"
+    cultural_reference: list[str] = Field(
+        description="list of the Japanese tradition, festival, aesthetic, or symbol referenced"
     )
-
+    significance: int = Field(
+        description="your judgement of the significance of the haiku",
+        ge=0,
+        le=10
+    )
 
 def create_llm(
     model: str = DEFAULT_MODEL,
     temperature: float = 0.8,
 ) -> BaseChatModel:
     return init_chat_model(model, temperature=temperature)
+
+async def evaluate_function(invocation: HaikuOutput) -> Awaitable[float]:
+    first_line_words_is_valid = len(invocation.line_one.split()) == 5
+    second_line_words_is_valid = len(invocation.line_two.split()) == 7
+    third_line_words_is_valid = len(invocation.line_three.split()) == 5
+    is_haiku_valid = first_line_words_is_valid and second_line_words_is_valid and third_line_words_is_valid
+    
+
+    haiku = f"{invocation.line_one} {invocation.line_two} {invocation.line_three}"
+
+    structured_llm = create_llm().with_structured_output(HaikuEvaluation)
+    prompt_template = ChatPromptTemplate.from_template([
+        ("system", EVALUATE_PROMPT),
+        ("user", haiku),
+    ])
+    result = await ( prompt_template | structured_llm).ainvoke()
+
+    return 0.0 if is_haiku_valid else 1.0 * len(result.cultural_reference) *  result.significance 
+
+
+
+
+
+    
+
+class HaikuOutput(BaseModel):
+    line_one: str = Field(description="First line (~5 syllables)")
+    line_two: str = Field(description="Second line (~7 syllables)")
+    line_three: str = Field(description="Third line (~5 syllables)")
+    
+
+
+
+
+
 
 
 def build_haiku_task_message(theme: str | None = None) -> HumanMessage:
@@ -151,15 +181,15 @@ def create_haiku_genome(
     *,
     task_message: HumanMessage | None = None,
 ) -> SimpleSystemPromptGenome[HaikuOutput]:
+    task = task_message or build_haiku_task_message()
+    phenotype = SimpleSystemPromptPhenotype(system_prompt=system_prompt, llm=llm)
     return SimpleSystemPromptGenome(
-        llm=llm,
-        system_prompt=system_prompt,
+        phenotype=phenotype,
         invocation_schema=HaikuOutput,
-        evaluation_schema=HaikuEvaluation,
-        task_message=task_message or build_haiku_task_message(),
-        mutate_prompt=MUTATE_PROMPT,
-        crossover_prompt=CROSSOVER_PROMPT,
-        evaluate_prompt=EVALUATE_PROMPT,
+        invoke_function=invoke_task_message_function(task, HaikuOutput),
+        evaluate_function=evaluate_prompt_function(EVALUATE_PROMPT, llm, HaikuEvaluation),
+        mutate_function=mutate_prompt_function(MUTATE_PROMPT, llm),
+        crossover_function=crossover_prompt_function(CROSSOVER_PROMPT, llm),
     )
 
 
@@ -168,7 +198,7 @@ def create_initial_population(
     population_size: int = DEFAULT_POPULATION_SIZE,
     *,
     shared_task: HumanMessage | None = None,
-) -> Population[SystemPrompt, HaikuOutput]:
+) -> Population[SimpleSystemPromptPhenotype, HaikuOutput]:
     task_message = shared_task or build_haiku_task_message()
     population = Population()
     for index in range(population_size):
@@ -190,7 +220,7 @@ def build_haiku_experiment(
     mutation_rate: float = DEFAULT_MUTATION_RATE,
     population_size: int = DEFAULT_POPULATION_SIZE,
     shared_task: HumanMessage | None = None,
-) -> ExperimentBuilder[SystemPrompt, HaikuOutput]:
+) -> ExperimentBuilder[SimpleSystemPromptPhenotype, HaikuOutput]:
     task_message = shared_task or build_haiku_task_message()
     return ExperimentBuilder(
         inital_population_strategy=lambda: create_initial_population(
@@ -216,7 +246,7 @@ async def run_haiku_experiment(
     mutation_rate: float = DEFAULT_MUTATION_RATE,
     population_size: int = DEFAULT_POPULATION_SIZE,
     shared_task: HumanMessage | None = None,
-) -> Population[SystemPrompt, HaikuOutput]:
+) -> Population[SimpleSystemPromptPhenotype, HaikuOutput]:
     chat_model = llm or create_llm(model=model)
     engine = build_haiku_experiment(
         chat_model,
@@ -237,14 +267,14 @@ def format_haiku(haiku: HaikuOutput) -> str:
     )
 
 
-def print_best_result(population: Population[SystemPrompt, HaikuOutput]) -> None:
+def print_best_result(population: Population[SimpleSystemPromptPhenotype, HaikuOutput]) -> None:
     best_genome, best_fitness = max(
         population.get_genome_fitness(),
         key=lambda item: item[1],
     )
     haiku = best_genome.invocation
     print("\n=== Best evolved system prompt ===")
-    print(best_genome.phenotype)
+    print(_render_system_prompt(best_genome.phenotype.system_prompt))
     print(f"\nFitness: {best_fitness:.2f}")
     print("\n=== Sample haiku ===")
     print(format_haiku(haiku))

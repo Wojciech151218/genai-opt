@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Callable
+import random
+from collections.abc import Awaitable, Callable
 from typing import Generic, Self, TypeVar
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -15,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from genai_opt.optimizer_engine.genome import Genome
 
-SystemPrompt = PromptTemplate | str
+SystemPrompt = str | PromptTemplate
 InvSchema = TypeVar("InvSchema", bound=BaseModel)
 
 
@@ -45,10 +46,6 @@ def _system_message_template(system_prompt: SystemPrompt) -> tuple[str, str] | S
     return SystemMessagePromptTemplate(prompt=system_prompt)
 
 
-def _build_system_chat_prompt(system_prompt: SystemPrompt) -> ChatPromptTemplate:
-    return ChatPromptTemplate.from_messages([_system_message_template(system_prompt)])
-
-
 def _build_invoke_chat_prompt(system_prompt: SystemPrompt) -> ChatPromptTemplate:
     return ChatPromptTemplate.from_messages(
         [
@@ -58,119 +55,176 @@ def _build_invoke_chat_prompt(system_prompt: SystemPrompt) -> ChatPromptTemplate
     )
 
 
-def _require_prompt_or_function(
-    prompt: SystemPrompt | None,
-    function: Callable[..., object] | None,
-    operation: str,
-) -> None:
-    if prompt is None and function is None:
-        raise ValueError(f"{operation} requires either a prompt or a function")
-
-
 def _format_invocation_for_evaluation(invocation: BaseModel) -> str:
     return invocation.model_dump_json()
 
 
-class SimpleSystemPromptGenome(Genome[SystemPrompt, InvSchema], Generic[InvSchema]):
-    def __init__(
-        self,
-        llm: BaseChatModel,
-        system_prompt: SystemPrompt,
-        *,
-        invocation_schema: type[InvSchema],
-        evaluation_schema: type[BaseModel] = EvaluationScore,
-        task_message: BaseMessage | None = None,
-        task_function: Callable[[SystemPrompt], InvSchema] | None = None,
-        mutate_prompt: SystemPrompt | None = None,
-        crossover_prompt: SystemPrompt | None = None,
-        mutate_function: Callable[[SystemPrompt], Self] | None = None,
-        crossover_function: Callable[[SystemPrompt, SystemPrompt], Self] | None = None,
-        evaluate_function: Callable[[InvSchema], float] | None = None,
-        evaluate_prompt: SystemPrompt | None = None,
-    ):
-        super().__init__(phenotype=system_prompt)
-        self._llm = llm
-        self._invocation_schema = invocation_schema
-        self._evaluation_schema = evaluation_schema
-        self.task_message = task_message
-        self.task_function = task_function
-        self.mutate_prompt = mutate_prompt
-        self.crossover_prompt = crossover_prompt
-        self.mutate_function = mutate_function
-        self.crossover_function = crossover_function
-        self.evaluate_function = evaluate_function
-        self.evaluate_prompt = evaluate_prompt
+def _extract_score(result: BaseModel) -> float:
+    score = getattr(result, "score", None)
+    if score is None:
+        raise ValueError("evaluation_schema must define a 'score' field of type float")
+    return float(score)
 
-        self._invocation_llm = llm.with_structured_output(invocation_schema)
-        self._evaluation_llm = llm.with_structured_output(evaluation_schema)
-        self._mutation_llm = llm.with_structured_output(SystemPromptMutation)
 
-    def _child(self, system_prompt: SystemPrompt) -> Self:
-        return self.__class__(
-            llm=self._llm,
-            system_prompt=system_prompt,
-            invocation_schema=self._invocation_schema,
-            evaluation_schema=self._evaluation_schema,
-            task_message=self.task_message,
-            task_function=self.task_function,
-            mutate_prompt=self.mutate_prompt,
-            crossover_prompt=self.crossover_prompt,
-            mutate_function=self.mutate_function,
-            crossover_function=self.crossover_function,
-            evaluate_function=self.evaluate_function,
-            evaluate_prompt=self.evaluate_prompt,
+class SimpleSystemPromptPhenotype(BaseModel):
+    system_prompt: SystemPrompt = Field(description="The system prompt")
+    llm: BaseChatModel = Field(description="The LLM to use for the system prompt")
+
+
+def llm_mutate_function(
+    llm_with_probabilities: dict[BaseChatModel, float],
+) -> Callable[[SimpleSystemPromptPhenotype], SimpleSystemPromptPhenotype]:
+    if not llm_with_probabilities:
+        raise ValueError("llm_with_probabilities must not be empty")
+    if abs(sum(llm_with_probabilities.values()) - 1.0) > 1e-9:
+        raise ValueError("llm_with_probabilities must sum to 1")
+
+    def mutate(phenotype: SimpleSystemPromptPhenotype) -> SimpleSystemPromptPhenotype:
+        llm = random.choices(
+            list(llm_with_probabilities.keys()),
+            weights=list(llm_with_probabilities.values()),
+        )[0]
+        return SimpleSystemPromptPhenotype(
+            system_prompt=phenotype.system_prompt,
+            llm=llm,
         )
 
-    def _extract_score(self, result: BaseModel) -> float:
-        score = getattr(result, "score", None)
-        if score is None:
-            raise ValueError("evaluation_schema must define a 'score' field of type float")
-        return float(score)
+    return mutate
 
-    async def invoke(self) -> InvSchema:
-        _require_prompt_or_function(self.task_message, self.task_function, "invoke")
-        if self.task_function is not None:
-            return self.task_function(self.phenotype)
 
-        prompt = _build_invoke_chat_prompt(self.phenotype)
-        chain = prompt | self._invocation_llm
-        return await chain.ainvoke({"task_messages": [self.task_message]})
-
-    async def evaluate(self) -> float:
-        _require_prompt_or_function(self.evaluate_prompt, self.evaluate_function, "evaluate")
-        if self.evaluate_function is not None:
-            return self.evaluate_function(self.invocation)
-
-        prompt = _ensure_prompt_template(self.evaluate_prompt)
-        chain = prompt | self._evaluation_llm
-        result = await chain.ainvoke(
-            {"output": _format_invocation_for_evaluation(self.invocation)}
+def mutate_prompt_function(
+    prompt_message_str: str,
+    llm: BaseChatModel,
+) -> Callable[[SimpleSystemPromptPhenotype], SimpleSystemPromptPhenotype]:
+    def mutate(phenotype: SimpleSystemPromptPhenotype) -> SimpleSystemPromptPhenotype:
+        prompt = ChatPromptTemplate.from_messages(
+            [SystemMessagePromptTemplate.from_template(prompt_message_str)]
         )
-        return self._extract_score(result)
-
-    async def mutate(self) -> Self:
-        _require_prompt_or_function(self.mutate_prompt, self.mutate_function, "mutate")
-        if self.mutate_function is not None:
-            return self.mutate_function(self.phenotype)
-
-        prompt = _ensure_prompt_template(self.mutate_prompt)
-        chain = prompt | self._mutation_llm
-        result = await chain.ainvoke({"system_prompt": _render_system_prompt(self.phenotype)})
-        return self._child(result.system_prompt)
-
-    async def crossover(self, other: Self) -> Self:
-        _require_prompt_or_function(
-            self.crossover_prompt, self.crossover_function, "crossover"
+        structured_llm = llm.with_structured_output(SystemPromptMutation)
+        result = (prompt | structured_llm).invoke(
+            {"system_prompt": _render_system_prompt(phenotype.system_prompt)}
         )
-        if self.crossover_function is not None:
-            return self.crossover_function(self.phenotype, other.phenotype)
+        return SimpleSystemPromptPhenotype(
+            system_prompt=result.system_prompt,
+            llm=phenotype.llm,
+        )
 
-        prompt = _ensure_prompt_template(self.crossover_prompt)
-        chain = prompt | self._mutation_llm
-        result = await chain.ainvoke(
+    return mutate
+
+
+def crossover_prompt_function(
+    prompt_message_str: str,
+    llm: BaseChatModel,
+) -> Callable[
+    [SimpleSystemPromptPhenotype, SimpleSystemPromptPhenotype],
+    SimpleSystemPromptPhenotype,
+]:
+    def crossover(
+        self_phenotype: SimpleSystemPromptPhenotype,
+        other_phenotype: SimpleSystemPromptPhenotype,
+    ) -> SimpleSystemPromptPhenotype:
+        prompt = _ensure_prompt_template(prompt_message_str)
+        structured_llm = llm.with_structured_output(SystemPromptMutation)
+        result = (prompt | structured_llm).invoke(
             {
-                "self": _render_system_prompt(self.phenotype),
-                "other": _render_system_prompt(other.phenotype),
+                "self": _render_system_prompt(self_phenotype.system_prompt),
+                "other": _render_system_prompt(other_phenotype.system_prompt),
             }
         )
-        return self._child(result.system_prompt)
+        return SimpleSystemPromptPhenotype(
+            system_prompt=result.system_prompt,
+            llm=self_phenotype.llm,
+        )
+
+    return crossover
+
+
+def evaluate_prompt_function(
+    prompt_message_str: str,
+    llm: BaseChatModel,
+    evaluation_schema: type[BaseModel] = EvaluationScore,
+) -> Callable[[BaseModel], Awaitable[float]]:
+    async def evaluate(invocation: BaseModel) -> float:
+        prompt = _ensure_prompt_template(prompt_message_str)
+        structured_llm = llm.with_structured_output(evaluation_schema)
+        chain = prompt | structured_llm
+        result = await chain.ainvoke(
+            {"output": _format_invocation_for_evaluation(invocation)}
+        )
+        return _extract_score(result)
+
+    return evaluate
+
+
+def invoke_task_message_function(
+    task_message: BaseMessage,
+    invocation_schema: type[InvSchema],
+) -> Callable[[SimpleSystemPromptPhenotype], Awaitable[InvSchema]]:
+    async def invoke(phenotype: SimpleSystemPromptPhenotype) -> InvSchema:
+        prompt = _build_invoke_chat_prompt(phenotype.system_prompt)
+        structured_llm = phenotype.llm.with_structured_output(invocation_schema)
+        chain = prompt | structured_llm
+        return await chain.ainvoke({"task_messages": [task_message]})
+
+    return invoke
+
+
+def mixed_mutate_function(
+    mutate_functions: list[Callable[[SimpleSystemPromptPhenotype], SimpleSystemPromptPhenotype]],
+) -> Callable[[SimpleSystemPromptPhenotype], SimpleSystemPromptPhenotype]:
+    if len(mutate_functions) == 0:
+        raise ValueError("mutate_functions must not be empty")
+
+    def mutate(phenotype: SimpleSystemPromptPhenotype) -> SimpleSystemPromptPhenotype:
+        for mutate_function in mutate_functions:
+            try:
+                return mutate_function(phenotype)
+            except Exception:
+                continue
+        raise ValueError("No mutate function succeeded")
+
+    return mutate
+
+
+class SimpleSystemPromptGenome(Genome[SimpleSystemPromptPhenotype, InvSchema], Generic[InvSchema]):
+    def __init__(
+        self,
+        phenotype: SimpleSystemPromptPhenotype,
+        *,
+        invocation_schema: type[InvSchema],
+        invoke_function: Callable[[SimpleSystemPromptPhenotype], Awaitable[InvSchema]],
+        evaluate_function: Callable[[InvSchema], Awaitable[float]],
+        mutate_function: Callable[[SimpleSystemPromptPhenotype], SimpleSystemPromptPhenotype],
+        crossover_function: Callable[
+            [SimpleSystemPromptPhenotype, SimpleSystemPromptPhenotype],
+            SimpleSystemPromptPhenotype,
+        ],
+    ):
+        super().__init__(phenotype=phenotype)
+        self._invocation_schema = invocation_schema
+        self._invoke_function = invoke_function
+        self._evaluate_function = evaluate_function
+        self._mutate_function = mutate_function
+        self._crossover_function = crossover_function
+
+    def _child(self, phenotype: SimpleSystemPromptPhenotype) -> Self:
+        return self.__class__(
+            phenotype=phenotype,
+            invocation_schema=self._invocation_schema,
+            invoke_function=self._invoke_function,
+            evaluate_function=self._evaluate_function,
+            mutate_function=self._mutate_function,
+            crossover_function=self._crossover_function,
+        )
+
+    async def invoke(self) -> InvSchema:
+        return await self._invoke_function(self.phenotype)
+
+    async def evaluate(self) -> float:
+        return await self._evaluate_function(self.invocation)
+
+    async def mutate(self) -> Self:
+        return self._child(self._mutate_function(self.phenotype))
+
+    async def crossover(self, other: Self) -> Self:
+        return self._child(self._crossover_function(self.phenotype, other.phenotype))
