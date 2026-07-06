@@ -2,8 +2,8 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 
 from genai_opt.experiments.haiku_experiment import (
-    HaikuOutput,
     SEED_SYSTEM_PROMPTS,
+    HaikuOutput,
     _is_valid_haiku_structure,
     build_haiku_experiment,
     build_haiku_task_message,
