@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 from typing import Awaitable
 from langchain_core.prompts import ChatPromptTemplate
 
-from genai_opt.adapters.genomes.simple_system_prompt_genome import (
+from genai_opt.adapters.simple_system_prompt_genome import (
     SimpleSystemPromptGenome,
     SimpleSystemPromptPhenotype,
     SystemPrompt,
@@ -19,7 +19,7 @@ from genai_opt.adapters.genomes.simple_system_prompt_genome import (
     evaluate_prompt_function,
     invoke_task_message_function,
     mutate_prompt_function,
-    _render_system_prompt,
+    render_system_prompt,
 )
 from genai_opt.optimizer_engine import (
     ExperimentBuilder,
@@ -274,7 +274,7 @@ def print_best_result(population: Population[SimpleSystemPromptPhenotype, HaikuO
     )
     haiku = best_genome.invocation
     print("\n=== Best evolved system prompt ===")
-    print(_render_system_prompt(best_genome.phenotype.system_prompt))
+    print(render_system_prompt(best_genome.phenotype.system_prompt))
     print(f"\nFitness: {best_fitness:.2f}")
     print("\n=== Sample haiku ===")
     print(format_haiku(haiku))

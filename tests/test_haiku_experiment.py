@@ -33,8 +33,8 @@ def test_create_initial_population_uses_seed_prompts() -> None:
 
     assert population.get_genome_count() == 4
     for index, genome in enumerate(population.population):
-        assert genome.phenotype == SEED_SYSTEM_PROMPTS[index % len(SEED_SYSTEM_PROMPTS)]
-        assert genome.task_message is task
+        assert genome.phenotype.system_prompt == SEED_SYSTEM_PROMPTS[index % len(SEED_SYSTEM_PROMPTS)]
+        assert genome.phenotype.llm is llm
 
 
 def test_build_haiku_experiment_wires_population_strategy() -> None:
@@ -52,8 +52,9 @@ def test_haiku_task_message_includes_cultural_theme() -> None:
     assert "5-7-5" in message.content
 
 
-def test_create_haiku_genome_configures_prompts() -> None:
+def test_create_haiku_genome_configures_functions() -> None:
     genome = create_haiku_genome(_StubChatModel(), SEED_SYSTEM_PROMPTS[0])
-    assert genome.mutate_prompt is not None
-    assert genome.crossover_prompt is not None
-    assert genome.evaluate_prompt is not None
+    assert callable(genome._mutate_function)
+    assert callable(genome._crossover_function)
+    assert callable(genome._evaluate_function)
+    assert callable(genome._invoke_function)
