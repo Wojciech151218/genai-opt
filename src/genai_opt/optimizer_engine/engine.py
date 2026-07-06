@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import Generic
 
 from genai_opt.optimizer_engine.population import Population
@@ -48,7 +49,10 @@ class Engine(Generic[P, Inv]):
     def _clear_helper_populations(self) -> None:
         self.offspring_population = Population()
 
-    async def run(self) -> Population[P, Inv]:
+    def run(self) -> Population[P, Inv]:
+        return asyncio.run(self._run_async())
+
+    async def _run_async(self) -> Population[P, Inv]:
         while not self.convergence_criterion(self.population, self.iteration):
             self._clear_helper_populations()
 

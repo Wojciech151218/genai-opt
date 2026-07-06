@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import os
 from collections.abc import Awaitable, Callable
 from random import choice
@@ -234,7 +233,7 @@ def build_haiku_experiment(
     )
 
 
-async def run_haiku_experiment(
+def run_haiku_experiment(
     llm: BaseChatModel | None = None,
     *,
     model: str = DEFAULT_MODEL,
@@ -251,7 +250,7 @@ async def run_haiku_experiment(
         population_size=population_size,
         shared_task=shared_task,
     ).build()
-    return await engine.run()
+    return engine.run()
 
 
 def format_haiku(haiku: HaikuOutput) -> str:
@@ -278,11 +277,9 @@ def main() -> None:
             "or pass a configured chat model to run_haiku_experiment()."
         )
 
-    population = asyncio.run(
-        run_haiku_experiment(
-            iterations=DEFAULT_ITERATIONS,
-            population_size=DEFAULT_POPULATION_SIZE,
-        )
+    population = run_haiku_experiment(
+        iterations=DEFAULT_ITERATIONS,
+        population_size=DEFAULT_POPULATION_SIZE,
     )
     print_best_result(population)
 
