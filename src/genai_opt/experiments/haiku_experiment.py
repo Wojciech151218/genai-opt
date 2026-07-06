@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import asyncio
 import os
+from collections.abc import Awaitable, Callable
 from random import choice
 
 from langchain.chat_models import init_chat_model
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
+from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
 
 from genai_opt.adapters.simple_system_prompt_genome import (
@@ -14,7 +16,6 @@ from genai_opt.adapters.simple_system_prompt_genome import (
     SimpleSystemPromptPhenotype,
     SystemPrompt,
     crossover_prompt_function,
-    evaluate_prompt_function,
     invoke_task_message_function,
     mutate_prompt_function,
     render_system_prompt,
@@ -96,37 +97,66 @@ Merge the best ideas from both into a single prompt that encourages poetic \
 haiku with authentic cultural significance.
 
 Prompt A:
-{self}
+{prompt_a}
 
 Prompt B:
-{other}
+{prompt_b}
 
 Return one unified system prompt."""
 
 EVALUATE_PROMPT = """\
-You judge haiku outputs for an evolutionary optimizer.
+You are a haiku judge.
 
 Score the candidate on:
 - Poetic quality (imagery, rhythm, restraint)
-- Syllable structure (classic 5-7-5 intent in English)
 - Cultural significance (kigo, tradition, aesthetics, specific cultural context)
-
-Candidate output (JSON):
-{output}
-
-Return a score from 0 to 100. Reserve 90+ for masterful, culturally grounded haiku."""
+"""
 
 
 class HaikuOutput(BaseModel):
     line_one: str = Field(description="First line (~5 syllables)")
     line_two: str = Field(description="Second line (~7 syllables)")
     line_three: str = Field(description="Third line (~5 syllables)")
-    cultural_reference: str = Field(description="The Japanese tradition, festival, aesthetic, or symbol referenced")
-    significance: str = Field(description="One sentence on why the haiku carries cultural weight")
 
 
 class HaikuEvaluation(BaseModel):
-    score: float = Field(description="Overall fitness from 0 to 100 for poetic and cultural quality")
+    cultural_reference: list[str] = Field(
+        description="List of the Japanese tradition, festival, aesthetic, or symbol referenced"
+    )
+    significance: int = Field(
+        description="Your judgement of the cultural significance of the haiku",
+        ge=0,
+        le=10,
+    )
+
+
+def _is_valid_haiku_structure(invocation: HaikuOutput) -> bool:
+    return (
+        len(invocation.line_one.split()) == 5
+        and len(invocation.line_two.split()) == 7
+        and len(invocation.line_three.split()) == 5
+    )
+
+
+def evaluate_haiku_function(
+    llm: BaseChatModel,
+) -> Callable[[HaikuOutput], Awaitable[float]]:
+    async def evaluate(invocation: HaikuOutput) -> float:
+        if not _is_valid_haiku_structure(invocation):
+            return 0.0
+
+        haiku = f"{invocation.line_one}\n{invocation.line_two}\n{invocation.line_three}"
+        prompt_template = ChatPromptTemplate.from_messages(
+            [
+                ("system", EVALUATE_PROMPT),
+                ("human", "{haiku}"),
+            ]
+        )
+        structured_llm = llm.with_structured_output(HaikuEvaluation)
+        result = await (prompt_template | structured_llm).ainvoke({"haiku": haiku})
+        return float(len(result.cultural_reference) * result.significance)
+
+    return evaluate
 
 
 def create_llm(
@@ -159,7 +189,7 @@ def create_haiku_genome(
         phenotype=phenotype,
         invocation_schema=HaikuOutput,
         invoke_function=invoke_task_message_function(task, HaikuOutput),
-        evaluate_function=evaluate_prompt_function(EVALUATE_PROMPT, llm, HaikuEvaluation),
+        evaluate_function=evaluate_haiku_function(llm),
         mutate_function=mutate_prompt_function(MUTATE_PROMPT, llm),
         crossover_function=crossover_prompt_function(CROSSOVER_PROMPT, llm),
     )
@@ -225,9 +255,7 @@ async def run_haiku_experiment(
 
 
 def format_haiku(haiku: HaikuOutput) -> str:
-    return (
-        f"{haiku.line_one}\n{haiku.line_two}\n{haiku.line_three}\n  → {haiku.cultural_reference}: {haiku.significance}"
-    )
+    return f"{haiku.line_one}\n{haiku.line_two}\n{haiku.line_three}"
 
 
 def print_best_result(population: Population[SimpleSystemPromptPhenotype, HaikuOutput]) -> None:
