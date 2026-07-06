@@ -22,9 +22,8 @@ class FloatGenome(Genome):
     async def invoke(self) -> float:
         return self.phenotype
 
-    async def evaluate(self) -> None:
-        fitness = 100.0 - abs(self.phenotype - self.target)
-        self._set_evaluation(fitness)
+    async def evaluate(self) -> float:
+        return 100.0 - abs(self.invocation - self.target)
 
     async def mutate(self) -> Self:
         delta = uniform(-self.mutation_scale, self.mutation_scale)
