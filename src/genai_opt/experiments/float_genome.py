@@ -40,3 +40,5 @@ class FloatGenome(Genome):
             target=self.target,
             mutation_scale=self.mutation_scale,
         )
+
+    x = 5
