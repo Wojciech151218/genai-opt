@@ -1,7 +1,7 @@
 ## Summary
 <!-- What changed? -->
 
-## Motivation
+## Why and purpose
 <!-- Why was this needed? -->
 
 ## Test plan

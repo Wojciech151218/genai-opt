@@ -12,7 +12,7 @@ requires-python = ">=3.13"
 authors = []
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "ruff>=0.1.0", "mypy>=1.0", "pytest-cov>=4.0"]
+dev = ["pytest>=7.0", "ruff>=0.1.0", "pytest-cov>=4.0"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -25,10 +25,22 @@ target-version = "py313"
 line-length = 88
 src = ["src", "tests"]
 
-[tool.mypy]
-python_version = "3.13"
-strict = false
-ignore_missing_imports = true
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes (unused imports, variables, etc.)
+    "I",   # isort (import ordering)
+    "N",   # pep8 naming conventions
+    "B",   # bugbear (common logic mistakes)
+    "C4",  # flake8-comprehensions (simplify list/dict expressions)
+    "UP",  # pyupgrade (outdated syntax)
+    "RUF", # ruff-specific rules
+]
+ignore = [
+    "N817",
+    "UP046",
+]
 
 [tool.coverage.run]
 source = ["src"]

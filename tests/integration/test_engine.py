@@ -1,20 +1,32 @@
 import asyncio
 
-from genai_opt.optimizer_engine.engine import Engine
-from genai_opt.optimizer_engine.convergence_criterion.convergence_criterion import iteration_limited_convergence
-from genai_opt.optimizer_engine.mutation_policy.mutation_policy import random_mutation
-from genai_opt.optimizer_engine.reproduction_policy.reproduction_policy import ReproductionPolicy
-from genai_opt.optimizer_engine.reproduction_policy.reproduction_strategy import generational_reproduction
-from genai_opt.optimizer_engine.reproduction_policy.parent_selection import tournament_selection
-from genai_opt.optimizer_engine.metrics_collector.terminal_logger import TerminalLoggerMetricsCollector
-from genai_opt.optimizer_engine.population import Population
 from genai_opt.experiments.float_genome import FloatGenome
+from genai_opt.optimizer_engine.convergence_criterion.convergence_criterion import (
+    iteration_limited_convergence,
+)
+from genai_opt.optimizer_engine.engine import Engine
+from genai_opt.optimizer_engine.metrics_collector.terminal_logger import (
+    TerminalLoggerMetricsCollector,
+)
+from genai_opt.optimizer_engine.mutation_policy.mutation_policy import random_mutation
+from genai_opt.optimizer_engine.population import Population
+from genai_opt.optimizer_engine.reproduction_policy.parent_selection import (
+    tournament_selection,
+)
+from genai_opt.optimizer_engine.reproduction_policy.reproduction_policy import (
+    ReproductionPolicy,
+)
+from genai_opt.optimizer_engine.reproduction_policy.reproduction_strategy import (
+    generational_reproduction,
+)
 
 
 def _build_test_engine(iterations=5):
     """Helper to build a complete engine with FloatGenome population."""
     target = 50.0
-    genomes = [FloatGenome(phenotype=float(v), target=target) for v in range(10, 110, 10)]
+    genomes = [
+        FloatGenome(phenotype=float(v), target=target) for v in range(10, 110, 10)
+    ]
     population = Population(genomes)
 
     convergence_criterion = iteration_limited_convergence(iterations)

@@ -12,9 +12,7 @@ def roulette_wheel_selection(population: T.Population) -> T.ParentPair:
     ]
     parents = []
     for _ in range(2):
-        parent = choices(
-            population.population, weights=selection_probabilities, k=1
-        )[0]
+        parent = choices(population.population, weights=selection_probabilities, k=1)[0]
         parents.append(parent)
     return parents[0], parents[1]
 
