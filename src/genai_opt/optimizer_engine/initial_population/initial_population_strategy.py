@@ -1,15 +1,12 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
-from typing import TypeVar
 
 from genai_opt.optimizer_engine.population import Population
 from genai_opt.optimizer_engine.utils.types import Types as T
 
-S = TypeVar("S")
 
-
-def cycle_seeds_initial_population_strategy(
+def cycle_seeds_initial_population_strategy[S](
     seeds: Sequence[S],
     create_genome: Callable[[S], T.Genome],
     *,
@@ -29,7 +26,7 @@ def cycle_seeds_initial_population_strategy(
     return create_population
 
 
-def cycle_seeds_initial_population(
+def cycle_seeds_initial_population[S](
     seeds: Sequence[S],
     create_genome: Callable[[S], T.Genome],
     *,

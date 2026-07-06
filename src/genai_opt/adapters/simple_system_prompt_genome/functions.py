@@ -49,13 +49,9 @@ def mutate_prompt_function(
     llm: BaseChatModel,
 ) -> Callable[[SimpleSystemPromptPhenotype], SimpleSystemPromptPhenotype]:
     def mutate(phenotype: SimpleSystemPromptPhenotype) -> SimpleSystemPromptPhenotype:
-        prompt = ChatPromptTemplate.from_messages(
-            [SystemMessagePromptTemplate.from_template(prompt_message_str)]
-        )
+        prompt = ChatPromptTemplate.from_messages([SystemMessagePromptTemplate.from_template(prompt_message_str)])
         structured_llm = llm.with_structured_output(SystemPromptMutation)
-        result = (prompt | structured_llm).invoke(
-            {"system_prompt": render_system_prompt(phenotype.system_prompt)}
-        )
+        result = (prompt | structured_llm).invoke({"system_prompt": render_system_prompt(phenotype.system_prompt)})
         return SimpleSystemPromptPhenotype(
             system_prompt=result.system_prompt,
             llm=phenotype.llm,
@@ -100,9 +96,7 @@ def evaluate_prompt_function(
         prompt = ensure_prompt_template(prompt_message_str)
         structured_llm = llm.with_structured_output(evaluation_schema)
         chain = prompt | structured_llm
-        result = await chain.ainvoke(
-            {"output": format_invocation_for_evaluation(invocation)}
-        )
+        result = await chain.ainvoke({"output": format_invocation_for_evaluation(invocation)})
         return extract_score(result)
 
     return evaluate

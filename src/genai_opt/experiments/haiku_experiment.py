@@ -121,18 +121,12 @@ class HaikuOutput(BaseModel):
     line_one: str = Field(description="First line (~5 syllables)")
     line_two: str = Field(description="Second line (~7 syllables)")
     line_three: str = Field(description="Third line (~5 syllables)")
-    cultural_reference: str = Field(
-        description="The Japanese tradition, festival, aesthetic, or symbol referenced"
-    )
-    significance: str = Field(
-        description="One sentence on why the haiku carries cultural weight"
-    )
+    cultural_reference: str = Field(description="The Japanese tradition, festival, aesthetic, or symbol referenced")
+    significance: str = Field(description="One sentence on why the haiku carries cultural weight")
 
 
 class HaikuEvaluation(BaseModel):
-    score: float = Field(
-        description="Overall fitness from 0 to 100 for poetic and cultural quality"
-    )
+    score: float = Field(description="Overall fitness from 0 to 100 for poetic and cultural quality")
 
 
 def create_llm(
@@ -232,10 +226,7 @@ async def run_haiku_experiment(
 
 def format_haiku(haiku: HaikuOutput) -> str:
     return (
-        f"{haiku.line_one}\n"
-        f"{haiku.line_two}\n"
-        f"{haiku.line_three}\n"
-        f"  → {haiku.cultural_reference}: {haiku.significance}"
+        f"{haiku.line_one}\n{haiku.line_two}\n{haiku.line_three}\n  → {haiku.cultural_reference}: {haiku.significance}"
     )
 
 
