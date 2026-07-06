@@ -1,4 +1,5 @@
 # genai-opt
+![Tests](https://github.com/Wojciech151218/genai-opt/actions/workflows/tests.yml/badge.svg)
 
 A Python library for GenAI optimization.
 
