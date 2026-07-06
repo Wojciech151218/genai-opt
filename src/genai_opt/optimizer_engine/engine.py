@@ -6,8 +6,8 @@ from genai_opt.optimizer_engine.population import Population
 from genai_opt.optimizer_engine.reproduction_policy.reproduction_policy import (
     ReproductionPolicy,
 )
-from genai_opt.optimizer_engine.utils.typevars import Inv, P
 from genai_opt.optimizer_engine.utils.types import Types as T
+from genai_opt.optimizer_engine.utils.typevars import Inv, P
 
 
 class Engine(Generic[P, Inv]):
@@ -34,9 +34,7 @@ class Engine(Generic[P, Inv]):
                 self.offspring_population.population[index] = await genome.mutate()
 
     async def _reproduce(self) -> None:
-        self.offspring_population = await self.reproduction_policy.get_new_population(
-            self.population
-        )
+        self.offspring_population = await self.reproduction_policy.get_new_population(self.population)
 
     async def _evaluate_offspring(self) -> None:
         await self.offspring_population.evaluate_population()

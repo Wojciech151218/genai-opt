@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+
 class EngineConfig:
-    _instance: "EngineConfig | None" = None
+    _instance: EngineConfig | None = None
 
     def __new__(cls, *args, **kwargs):
         if cls._instance is None:

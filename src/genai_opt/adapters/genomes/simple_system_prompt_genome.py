@@ -143,9 +143,7 @@ class SimpleSystemPromptGenome(Genome[SystemPrompt, InvSchema], Generic[InvSchem
 
         prompt = _ensure_prompt_template(self.evaluate_prompt)
         chain = prompt | self._evaluation_llm
-        result = await chain.ainvoke(
-            {"output": _format_invocation_for_evaluation(self.invocation)}
-        )
+        result = await chain.ainvoke({"output": _format_invocation_for_evaluation(self.invocation)})
         return self._extract_score(result)
 
     async def mutate(self) -> Self:
@@ -159,9 +157,7 @@ class SimpleSystemPromptGenome(Genome[SystemPrompt, InvSchema], Generic[InvSchem
         return self._child(result.system_prompt)
 
     async def crossover(self, other: Self) -> Self:
-        _require_prompt_or_function(
-            self.crossover_prompt, self.crossover_function, "crossover"
-        )
+        _require_prompt_or_function(self.crossover_prompt, self.crossover_function, "crossover")
         if self.crossover_function is not None:
             return self.crossover_function(self.phenotype, other.phenotype)
 

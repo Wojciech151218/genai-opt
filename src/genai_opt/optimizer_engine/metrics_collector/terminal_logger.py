@@ -23,9 +23,5 @@ class TerminalLoggerMetricsCollector(MetricsCollector):
         worst = min(fitnesses)
         mean = sum(fitnesses) / population_size
         print(
-            f"iteration={iteration} "
-            f"population_size={population_size} "
-            f"best={best:.4f} "
-            f"worst={worst:.4f} "
-            f"mean={mean:.4f}"
+            f"iteration={iteration} population_size={population_size} best={best:.4f} worst={worst:.4f} mean={mean:.4f}"
         )
