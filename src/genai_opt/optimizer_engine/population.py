@@ -1,11 +1,31 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from collections.abc import Callable
 from typing import Generic
 
 from genai_opt.optimizer_engine.genome import Genome
+from genai_opt.optimizer_engine.operation_record import OperationRecord
 from genai_opt.optimizer_engine.utils.typevars import Inv, P
+
+
+async def _timed_invoke(genome: Genome[P, Inv]) -> OperationRecord:
+    start = time.perf_counter()
+    await genome._invoke()
+    duration = time.perf_counter() - start
+    tokens = genome.last_operation_tokens
+    genome._clear_operation_tokens()
+    return OperationRecord("invoke", duration, tokens)
+
+
+async def _timed_evaluate(genome: Genome[P, Inv]) -> OperationRecord:
+    start = time.perf_counter()
+    await genome._evaluate()
+    duration = time.perf_counter() - start
+    tokens = genome.last_operation_tokens
+    genome._clear_operation_tokens()
+    return OperationRecord("evaluate", duration, tokens)
 
 
 class Population(Generic[P, Inv]):
@@ -22,9 +42,12 @@ class Population(Generic[P, Inv]):
         for genome in self.population:
             lambda_function(genome)
 
-    async def evaluate_population(self) -> None:
-        await asyncio.gather(*[genome._invoke() for genome in self.population])
-        await asyncio.gather(*[genome._evaluate() for genome in self.population])
+    async def evaluate_population(self) -> list[OperationRecord]:
+        invoke_operations = await asyncio.gather(*[_timed_invoke(genome) for genome in self.population])
+        evaluate_operations = await asyncio.gather(
+            *[_timed_evaluate(genome) for genome in self.population]
+        )
+        return list(invoke_operations) + list(evaluate_operations)
 
     def reset_evaluations(self) -> None:
         for genome in self.population:

@@ -8,6 +8,7 @@ from genai_opt.optimizer_engine.initial_population import (
     cycle_seeds_initial_population,
     cycle_seeds_initial_population_strategy,
 )
+from genai_opt.optimizer_engine.iteration_metadata import IterationMetadata
 from genai_opt.optimizer_engine.metrics_collector.terminal_logger import (
     TerminalLoggerMetricsCollector,
 )
@@ -23,6 +24,7 @@ __all__ = [
     "Engine",
     "ExperimentBuilder",
     "Genome",
+    "IterationMetadata",
     "Population",
     "ReproductionPolicy",
     "TerminalLoggerMetricsCollector",

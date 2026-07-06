@@ -11,6 +11,7 @@ class Genome(ABC, Generic[P, Inv]):
         self.phenotype = phenotype
         self._evaluation: float | None = None
         self._invocation: Inv | None = None
+        self._last_operation_tokens: int = 0
 
     @property
     def invocation(self) -> Inv:
@@ -35,6 +36,16 @@ class Genome(ABC, Generic[P, Inv]):
 
     def _set_evaluation(self, value: float) -> None:
         self._evaluation = value
+
+    @property
+    def last_operation_tokens(self) -> int:
+        return self._last_operation_tokens
+
+    def _set_operation_tokens(self, tokens: int) -> None:
+        self._last_operation_tokens = tokens
+
+    def _clear_operation_tokens(self) -> None:
+        self._last_operation_tokens = 0
 
     @abstractmethod
     async def invoke(self) -> Inv:
