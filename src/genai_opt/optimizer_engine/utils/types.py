@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
+from typing import Any, TypeVar
 
 from genai_opt.optimizer_engine.genome import Genome as Gen
 from genai_opt.optimizer_engine.metrics_collector.metrics_collector import (
