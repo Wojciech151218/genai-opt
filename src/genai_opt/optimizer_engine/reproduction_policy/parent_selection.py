@@ -7,9 +7,7 @@ from genai_opt.optimizer_engine.utils.types import Types as T
 
 def roulette_wheel_selection(population: T.Population) -> T.ParentPair:
     total_fitness = sum(genome.evaluation for genome in population.population)
-    selection_probabilities = [
-        genome.evaluation / total_fitness for genome in population.population
-    ]
+    selection_probabilities = [genome.evaluation / total_fitness for genome in population.population]
     parents = []
     for _ in range(2):
         parent = choices(population.population, weights=selection_probabilities, k=1)[0]

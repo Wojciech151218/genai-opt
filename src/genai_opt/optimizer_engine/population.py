@@ -38,9 +38,7 @@ class Population(Generic[P, Inv]):
         return genome, genome.evaluation
 
     def get_genome_fitness(self) -> list[tuple[Genome[P, Inv], float]]:
-        return [
-            self.get_genome_and_fitness(index) for index in range(len(self.population))
-        ]
+        return [self.get_genome_and_fitness(index) for index in range(len(self.population))]
 
     def get_genome_count(self) -> int:
         return len(self.population)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import Generic, Self
+
 from genai_opt.optimizer_engine.utils.typevars import Inv, P
 
 
@@ -26,9 +27,8 @@ class Genome(ABC, Generic[P, Inv]):
     def reset_invocations(self) -> None:
         self._invocation = None
 
-    def _set_invocation(self, invocation : Inv) -> None :
+    def _set_invocation(self, invocation: Inv) -> None:
         self._invocation = invocation
-
 
     def reset_evaluation(self) -> None:
         self._evaluation = None
@@ -36,12 +36,9 @@ class Genome(ABC, Generic[P, Inv]):
     def _set_evaluation(self, value: float) -> None:
         self._evaluation = value
 
-
-
     @abstractmethod
     async def invoke(self) -> Inv:
         raise NotImplementedError("Genome.invoke() is not implemented")
-
 
     @abstractmethod
     async def evaluate(self) -> float:

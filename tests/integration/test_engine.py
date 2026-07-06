@@ -24,9 +24,7 @@ from genai_opt.optimizer_engine.reproduction_policy.reproduction_strategy import
 def _build_test_engine(iterations=5):
     """Helper to build a complete engine with FloatGenome population."""
     target = 50.0
-    genomes = [
-        FloatGenome(phenotype=float(v), target=target) for v in range(10, 110, 10)
-    ]
+    genomes = [FloatGenome(phenotype=float(v), target=target) for v in range(10, 110, 10)]
     population = Population(genomes)
 
     convergence_criterion = iteration_limited_convergence(iterations)
