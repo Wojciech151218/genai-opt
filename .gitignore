@@ -5,6 +5,7 @@ __pycache__/
 .eggs/
 dist/
 build/
+site/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/

@@ -1,0 +1,17 @@
+site_name: genai-opt
+site_description: Documentation for the genai-opt Python optimization library.
+repo_url: https://github.com/Wojciech151218/genai-opt
+
+theme:
+  name: readthedocs
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - API Reference: api.md
+  - Development: development.md
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
