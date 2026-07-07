@@ -23,7 +23,5 @@ class Types:
     type MetricsCollector = MC[P, Inv]
     type MutationPolicy = Callable[[Gen[P, Inv]], bool]
     type ParentSelection = Callable[[Pop[P, Inv]], ParentPair[P, Inv]]
-    type ReproduceFn = Callable[
-        [Pop[P, Inv]], Pop[P, Inv] | Awaitable[Pop[P, Inv]]
-    ]
+    type ReproduceFn = Callable[[Pop[P, Inv]], Pop[P, Inv] | Awaitable[Pop[P, Inv]]]
     type ReproductionStrategy = Callable[[ParentSelection], ReproduceFn]

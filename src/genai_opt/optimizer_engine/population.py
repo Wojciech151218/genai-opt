@@ -10,9 +10,7 @@ from genai_opt.optimizer_engine.utils.typevars import Inv, P
 
 class Population(Generic[P, Inv]):
     def __init__(self, population: list[Genome[P, Inv]] | None = None):
-        self.population: list[Genome[P, Inv]] = (
-            [] if population is None else population
-        )
+        self.population: list[Genome[P, Inv]] = [] if population is None else population
 
     def add_genome(self, genome: Genome[P, Inv]) -> None:
         self.population.append(genome)
@@ -25,7 +23,8 @@ class Population(Generic[P, Inv]):
             lambda_function(genome)
 
     async def evaluate_population(self) -> None:
-        await asyncio.gather(*[genome.evaluate() for genome in self.population])
+        await asyncio.gather(*[genome._invoke() for genome in self.population])
+        await asyncio.gather(*[genome._evaluate() for genome in self.population])
 
     def reset_evaluations(self) -> None:
         for genome in self.population:
@@ -35,13 +34,11 @@ class Population(Generic[P, Inv]):
         try:
             genome = self.population[index]
         except IndexError:
-            raise IndexError(f"Index {index} out of range")
+            raise IndexError(f"Index {index} out of range") from None
         return genome, genome.evaluation
 
     def get_genome_fitness(self) -> list[tuple[Genome[P, Inv], float]]:
-        return [
-            self.get_genome_and_fitness(index) for index in range(len(self.population))
-        ]
+        return [self.get_genome_and_fitness(index) for index in range(len(self.population))]
 
     def get_genome_count(self) -> int:
         return len(self.population)
