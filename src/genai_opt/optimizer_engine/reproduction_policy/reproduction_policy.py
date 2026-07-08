@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 
-from genai_opt.optimizer_engine.operation_record import OperationRecord
+from genai_opt.optimizer_engine.operation import Operation
 from genai_opt.optimizer_engine.utils.types import Types as T
 
 
@@ -14,9 +14,7 @@ class ReproductionPolicy:
     ) -> None:
         self.reproduce = reproduction_strategy(parent_selection)
 
-    async def get_new_population(
-        self, population: T.Population
-    ) -> tuple[T.Population, list[OperationRecord]]:
+    async def get_new_population(self, population: T.Population) -> tuple[T.Population, list[Operation]]:
         result = self.reproduce(population)
         if asyncio.iscoroutine(result):
             return await result

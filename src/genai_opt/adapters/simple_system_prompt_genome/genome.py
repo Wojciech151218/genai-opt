@@ -8,6 +8,7 @@ from genai_opt.adapters.simple_system_prompt_genome.types import (
     SimpleSystemPromptPhenotype,
 )
 from genai_opt.optimizer_engine.genome import Genome
+from genai_opt.optimizer_engine.operation import Operation
 
 
 class SimpleSystemPromptGenome(Genome[SimpleSystemPromptPhenotype, InvSchema], Generic[InvSchema]):
@@ -41,14 +42,14 @@ class SimpleSystemPromptGenome(Genome[SimpleSystemPromptPhenotype, InvSchema], G
             crossover_function=self._crossover_function,
         )
 
-    async def invoke(self) -> InvSchema:
-        return await self._invoke_function(self.phenotype)
+    async def invoke(self) -> Operation[InvSchema]:
+        return Operation(await self._invoke_function(self.phenotype))
 
-    async def evaluate(self) -> float:
-        return await self._evaluate_function(self.invocation)
+    async def evaluate(self) -> Operation[float]:
+        return Operation(await self._evaluate_function(self.invocation))
 
-    async def mutate(self) -> Self:
-        return self._child(self._mutate_function(self.phenotype))
+    async def mutate(self) -> Operation[Self]:
+        return Operation(self._child(self._mutate_function(self.phenotype)))
 
-    async def crossover(self, other: Self) -> Self:
-        return self._child(self._crossover_function(self.phenotype, other.phenotype))
+    async def crossover(self, other: Self) -> Operation[Self]:
+        return Operation(self._child(self._crossover_function(self.phenotype, other.phenotype)))

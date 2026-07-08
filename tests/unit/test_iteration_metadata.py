@@ -7,7 +7,7 @@ from genai_opt.optimizer_engine.iteration_metadata import (
     IterationMetadata,
     PhenotypeState,
 )
-from genai_opt.optimizer_engine.operation_record import OperationRecord
+from genai_opt.optimizer_engine.operation import Operation
 from genai_opt.optimizer_engine.population import Population
 
 
@@ -35,8 +35,8 @@ def test_iteration_metadata_totals():
         iteration=0,
         phenotype_states=[PhenotypeState(phenotype=1.0, fitness=10.0, invocation=1.0)],
         operations=[
-            OperationRecord("invoke", duration_seconds=0.5, tokens=10),
-            OperationRecord("evaluate", duration_seconds=0.25, tokens=5),
+            Operation(1.0, kind="invoke", duration_seconds=0.5, tokens_in=6, tokens_out=4),
+            Operation(10.0, kind="evaluate", duration_seconds=0.25, tokens_in=3, tokens_out=2),
         ],
     )
 

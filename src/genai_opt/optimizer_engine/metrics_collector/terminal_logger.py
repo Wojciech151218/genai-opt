@@ -9,9 +9,7 @@ from genai_opt.optimizer_engine.utils.typevars import Inv, P
 
 class TerminalLoggerMetricsCollector(MetricsCollector[P, Inv]):
     def collect(self, metadata: IterationMetadata[P, Inv]) -> None:
-        fitnesses = [
-            state.fitness for state in metadata.phenotype_states if state.fitness is not None
-        ]
+        fitnesses = [state.fitness for state in metadata.phenotype_states if state.fitness is not None]
         population_size = len(metadata.phenotype_states)
 
         if population_size == 0:

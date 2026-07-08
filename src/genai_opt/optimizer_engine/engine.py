@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import time
 from typing import Generic
 
 from genai_opt.optimizer_engine.iteration_metadata import IterationMetadata
-from genai_opt.optimizer_engine.operation_record import OperationRecord
+from genai_opt.optimizer_engine.operation import Operation
 from genai_opt.optimizer_engine.population import Population
 from genai_opt.optimizer_engine.reproduction_policy.reproduction_policy import (
     ReproductionPolicy,
@@ -31,27 +30,22 @@ class Engine(Generic[P, Inv]):
         self.convergence_criterion = convergence_criterion
         self.mutation_policy = mutation_policy
 
-    async def _mutate(self) -> list[OperationRecord]:
-        operations: list[OperationRecord] = []
+    async def _mutate(self) -> list[Operation]:
+        operations: list[Operation] = []
         for index, genome in enumerate(self.offspring_population.population):
             if self.mutation_policy(genome):
-                start = time.perf_counter()
-                mutated = await genome.mutate()
-                duration = time.perf_counter() - start
-                operations.append(
-                    OperationRecord("mutation", duration, genome.last_operation_tokens)
-                )
-                genome._clear_operation_tokens()
-                self.offspring_population.population[index] = mutated
+                operation = await genome._mutate()
+                operations.append(operation)
+                self.offspring_population.population[index] = operation.value
         return operations
 
-    async def _reproduce(self) -> tuple[Population[P, Inv], list[OperationRecord]]:
+    async def _reproduce(self) -> tuple[Population[P, Inv], list[Operation]]:
         return await self.reproduction_policy.get_new_population(self.population)
 
-    async def _evaluate_offspring(self) -> list[OperationRecord]:
+    async def _evaluate_offspring(self) -> list[Operation]:
         return await self.offspring_population.evaluate_population()
 
-    async def _evaluate_population(self) -> list[OperationRecord]:
+    async def _evaluate_population(self) -> list[Operation]:
         return await self.population.evaluate_population()
 
     def _replace(self) -> None:
@@ -63,7 +57,7 @@ class Engine(Generic[P, Inv]):
     async def run(self) -> Population[P, Inv]:
         while not self.convergence_criterion(self.population, self.iteration):
             self._clear_helper_populations()
-            operations: list[OperationRecord] = []
+            operations: list[Operation] = []
 
             operations.extend(await self._evaluate_population())
             self.offspring_population, reproduction_operations = await self._reproduce()

@@ -13,6 +13,7 @@ from genai_opt.optimizer_engine.metrics_collector.terminal_logger import (
     TerminalLoggerMetricsCollector,
 )
 from genai_opt.optimizer_engine.mutation_policy import random_mutation
+from genai_opt.optimizer_engine.operation import LLMMetadata, Operation
 from genai_opt.optimizer_engine.population import Population
 from genai_opt.optimizer_engine.reproduction_policy import (
     ReproductionPolicy,
@@ -25,6 +26,8 @@ __all__ = [
     "ExperimentBuilder",
     "Genome",
     "IterationMetadata",
+    "LLMMetadata",
+    "Operation",
     "Population",
     "ReproductionPolicy",
     "TerminalLoggerMetricsCollector",

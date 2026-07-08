@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Generic
 
-from genai_opt.optimizer_engine.operation_record import OperationKind, OperationRecord
+from genai_opt.optimizer_engine.operation import Operation, OperationKind
 from genai_opt.optimizer_engine.utils.typevars import Inv, P
 
 if TYPE_CHECKING:
@@ -21,11 +21,15 @@ class PhenotypeState(Generic[P, Inv]):
 class IterationMetadata(Generic[P, Inv]):
     iteration: int
     phenotype_states: list[PhenotypeState[P, Inv]] = field(default_factory=list)
-    operations: list[OperationRecord] = field(default_factory=list)
+    operations: list[Operation] = field(default_factory=list)
 
     @property
     def total_tokens(self) -> int:
         return sum(operation.tokens for operation in self.operations)
+
+    @property
+    def total_cost(self) -> float:
+        return sum(operation.cost for operation in self.operations)
 
     @property
     def total_duration_seconds(self) -> float:
@@ -35,16 +39,14 @@ class IterationMetadata(Generic[P, Inv]):
         return sum(operation.tokens for operation in self.operations if operation.kind == kind)
 
     def duration_by_kind(self, kind: OperationKind) -> float:
-        return sum(
-            operation.duration_seconds for operation in self.operations if operation.kind == kind
-        )
+        return sum(operation.duration_seconds for operation in self.operations if operation.kind == kind)
 
     @classmethod
     def from_population(
         cls,
         iteration: int,
         population: Population[P, Inv],
-        operations: list[OperationRecord],
+        operations: list[Operation],
     ) -> IterationMetadata[P, Inv]:
         phenotype_states: list[PhenotypeState[P, Inv]] = []
         for genome in population.population:

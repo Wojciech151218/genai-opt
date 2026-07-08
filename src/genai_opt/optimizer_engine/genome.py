@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import time
 from abc import ABC, abstractmethod
 from typing import Generic, Self
 
+from genai_opt.optimizer_engine.operation import Operation, OperationKind
 from genai_opt.optimizer_engine.utils.typevars import Inv, P
 
 
@@ -11,7 +13,6 @@ class Genome(ABC, Generic[P, Inv]):
         self.phenotype = phenotype
         self._evaluation: float | None = None
         self._invocation: Inv | None = None
-        self._last_operation_tokens: int = 0
 
     @property
     def invocation(self) -> Inv:
@@ -37,34 +38,44 @@ class Genome(ABC, Generic[P, Inv]):
     def _set_evaluation(self, value: float) -> None:
         self._evaluation = value
 
-    @property
-    def last_operation_tokens(self) -> int:
-        return self._last_operation_tokens
-
-    def _set_operation_tokens(self, tokens: int) -> None:
-        self._last_operation_tokens = tokens
-
-    def _clear_operation_tokens(self) -> None:
-        self._last_operation_tokens = 0
-
     @abstractmethod
-    async def invoke(self) -> Inv:
+    async def invoke(self) -> Operation[Inv]:
         raise NotImplementedError("Genome.invoke() is not implemented")
 
     @abstractmethod
-    async def evaluate(self) -> float:
+    async def evaluate(self) -> Operation[float]:
         raise NotImplementedError("Genome.evaluate() is not implemented")
 
-    async def _evaluate(self) -> None:
-        self._set_evaluation(await self.evaluate())
-
-    async def _invoke(self) -> None:
-        self._set_invocation(await self.invoke())
-
     @abstractmethod
-    async def mutate(self) -> Self:
+    async def mutate(self) -> Operation[Self]:
         raise NotImplementedError("Genome.mutate() is not implemented")
 
     @abstractmethod
-    async def crossover(self, other: Genome[P, Inv]) -> Self:
+    async def crossover(self, other: Genome[P, Inv]) -> Operation[Self]:
         raise NotImplementedError("Genome.crossover() is not implemented")
+
+    @staticmethod
+    async def _timed(operation_coroutine, kind: OperationKind) -> Operation:
+        start = time.perf_counter()
+        operation = await operation_coroutine
+        duration = time.perf_counter() - start
+        operation.set_kind(kind)
+        if operation.duration_seconds == 0.0:
+            operation.set_duration(duration)
+        return operation
+
+    async def _invoke(self) -> Operation[Inv]:
+        operation = await self._timed(self.invoke(), "invoke")
+        self._set_invocation(operation.value)
+        return operation
+
+    async def _evaluate(self) -> Operation[float]:
+        operation = await self._timed(self.evaluate(), "evaluate")
+        self._set_evaluation(operation.value)
+        return operation
+
+    async def _mutate(self) -> Operation[Self]:
+        return await self._timed(self.mutate(), "mutation")
+
+    async def _crossover(self, other: Genome[P, Inv]) -> Operation[Self]:
+        return await self._timed(self.crossover(other), "crossover")
