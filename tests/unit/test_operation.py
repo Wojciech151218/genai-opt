@@ -1,6 +1,7 @@
 """Tests for Operation and LLMMetadata."""
 
-from types import SimpleNamespace
+import pytest
+from langchain_core.messages import AIMessage
 
 from genai_opt.optimizer_engine.operation import LLMMetadata, Operation
 
@@ -50,12 +51,14 @@ def test_operation_setters():
     assert operation.tokens == 30
 
 
-def test_llm_metadata_from_openai():
-    response = SimpleNamespace(
-        model="gpt-4o-mini",
-        usage=SimpleNamespace(prompt_tokens=120, completion_tokens=30),
+def test_llm_metadata_from_ai_message_usage_metadata():
+    """Standardized usage_metadata field is preferred, model from model_name (OpenAI)."""
+    message = AIMessage(
+        content="hello",
+        usage_metadata={"input_tokens": 120, "output_tokens": 30, "total_tokens": 150},
+        response_metadata={"model_name": "gpt-4o-mini"},
     )
-    metadata = LLMMetadata.from_openai(response, time_seconds=0.8, cost=0.001)
+    metadata = LLMMetadata.from_ai_message(message, time_seconds=0.8, cost=0.001)
     assert metadata.model == "gpt-4o-mini"
     assert metadata.tokens_in == 120
     assert metadata.tokens_out == 30
@@ -64,45 +67,51 @@ def test_llm_metadata_from_openai():
     assert metadata.cost == 0.001
 
 
-def test_llm_metadata_from_openai_responses_api():
-    response = SimpleNamespace(
-        model="gpt-4o",
-        usage=SimpleNamespace(input_tokens=200, output_tokens=80),
+def test_llm_metadata_from_ai_message_openai_token_usage():
+    """OpenAI response_metadata fallback: token_usage with prompt/completion tokens."""
+    message = AIMessage(
+        content="hello",
+        response_metadata={
+            "model_name": "gpt-4o",
+            "token_usage": {"prompt_tokens": 200, "completion_tokens": 80},
+        },
     )
-    metadata = LLMMetadata.from_openai(response)
+    metadata = LLMMetadata.from_ai_message(message)
+    assert metadata.model == "gpt-4o"
     assert metadata.tokens_in == 200
     assert metadata.tokens_out == 80
 
 
-def test_llm_metadata_from_anthropic():
-    message = SimpleNamespace(
-        model="claude-sonnet-4-20250514",
-        usage=SimpleNamespace(input_tokens=90, output_tokens=45),
+def test_llm_metadata_from_ai_message_anthropic_usage():
+    """Anthropic response_metadata fallback: usage with input/output tokens."""
+    message = AIMessage(
+        content="hello",
+        response_metadata={
+            "model": "claude-sonnet-4-20250514",
+            "usage": {"input_tokens": 90, "output_tokens": 45},
+        },
     )
-    metadata = LLMMetadata.from_anthropic(message, time_seconds=1.2)
+    metadata = LLMMetadata.from_ai_message(message, time_seconds=1.2)
     assert metadata.model == "claude-sonnet-4-20250514"
     assert metadata.tokens_in == 90
     assert metadata.tokens_out == 45
     assert metadata.time_seconds == 1.2
 
 
-def test_operation_from_openai():
-    response = SimpleNamespace(
-        model="gpt-4o-mini",
-        usage=SimpleNamespace(prompt_tokens=10, completion_tokens=5),
+def test_llm_metadata_from_ai_message_unrecognized_shape_raises():
+    message = AIMessage(content="hello")
+    with pytest.raises(ValueError, match="Unrecognized AIMessage shape"):
+        LLMMetadata.from_ai_message(message)
+
+
+def test_operation_from_ai_message():
+    message = AIMessage(
+        content="haiku text",
+        usage_metadata={"input_tokens": 10, "output_tokens": 5, "total_tokens": 15},
+        response_metadata={"model_name": "gpt-4o-mini"},
     )
-    operation = Operation.from_openai("haiku text", response)
+    operation = Operation.from_ai_message("haiku text", message, cost=0.0005)
     assert operation.value == "haiku text"
     assert operation.tokens == 15
     assert operation.llm_metadata.model == "gpt-4o-mini"
-
-
-def test_operation_from_anthropic():
-    message = SimpleNamespace(
-        model="claude-sonnet-4-20250514",
-        usage=SimpleNamespace(input_tokens=7, output_tokens=3),
-    )
-    operation = Operation.from_anthropic(42.0, message, cost=0.0005)
-    assert operation.value == 42.0
-    assert operation.tokens == 10
     assert operation.cost == 0.0005

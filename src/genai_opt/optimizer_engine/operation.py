@@ -22,45 +22,64 @@ class LLMMetadata:
         return self.tokens_in + self.tokens_out
 
     @classmethod
-    def from_openai(
-        cls,
-        response: Any,
-        *,
-        time_seconds: float | None = None,
-        cost: float | None = None,
-    ) -> LLMMetadata:
-        """Build metadata from an OpenAI chat completion or Responses API result."""
-        usage = getattr(response, "usage", None)
-        tokens_in = getattr(usage, "prompt_tokens", None)
-        if tokens_in is None:
-            tokens_in = getattr(usage, "input_tokens", 0) or 0
-        tokens_out = getattr(usage, "completion_tokens", None)
-        if tokens_out is None:
-            tokens_out = getattr(usage, "output_tokens", 0) or 0
-        return cls(
-            model=getattr(response, "model", None),
-            cost=cost,
-            time_seconds=time_seconds,
-            tokens_in=tokens_in,
-            tokens_out=tokens_out,
-        )
-
-    @classmethod
-    def from_anthropic(
+    def from_ai_message(
         cls,
         message: Any,
         *,
         time_seconds: float | None = None,
         cost: float | None = None,
     ) -> LLMMetadata:
-        """Build metadata from an Anthropic Messages API result."""
-        usage = getattr(message, "usage", None)
+        """Build metadata from a LangChain ``AIMessage``.
+
+        Token counts are read from the standardized ``usage_metadata`` field
+        (``input_tokens`` / ``output_tokens``). If it is absent, falls back to
+        the provider-specific ``response_metadata`` payloads: ``token_usage``
+        with ``prompt_tokens``/``completion_tokens`` (OpenAI) or ``usage`` with
+        ``input_tokens``/``output_tokens`` (Anthropic).
+
+        Raises:
+            ValueError: If no recognizable token usage shape is found.
+        """
+        response_metadata = getattr(message, "response_metadata", None) or {}
+        if not isinstance(response_metadata, dict):
+            response_metadata = {}
+        model = response_metadata.get("model_name") or response_metadata.get("model")
+
+        tokens_in, tokens_out = cls._extract_token_counts(message, response_metadata)
         return cls(
-            model=getattr(message, "model", None),
+            model=model,
             cost=cost,
             time_seconds=time_seconds,
-            tokens_in=getattr(usage, "input_tokens", 0) or 0,
-            tokens_out=getattr(usage, "output_tokens", 0) or 0,
+            tokens_in=tokens_in,
+            tokens_out=tokens_out,
+        )
+
+    @staticmethod
+    def _extract_token_counts(message: Any, response_metadata: dict) -> tuple[int, int]:
+        usage_metadata = getattr(message, "usage_metadata", None)
+        if isinstance(usage_metadata, dict) and ("input_tokens" in usage_metadata or "output_tokens" in usage_metadata):
+            return (
+                usage_metadata.get("input_tokens", 0) or 0,
+                usage_metadata.get("output_tokens", 0) or 0,
+            )
+
+        token_usage = response_metadata.get("token_usage")
+        if isinstance(token_usage, dict) and ("prompt_tokens" in token_usage or "completion_tokens" in token_usage):
+            return (
+                token_usage.get("prompt_tokens", 0) or 0,
+                token_usage.get("completion_tokens", 0) or 0,
+            )
+
+        usage = response_metadata.get("usage")
+        if isinstance(usage, dict) and ("input_tokens" in usage or "output_tokens" in usage):
+            return (
+                usage.get("input_tokens", 0) or 0,
+                usage.get("output_tokens", 0) or 0,
+            )
+
+        raise ValueError(
+            "Unrecognized AIMessage shape: no token usage found in usage_metadata "
+            "or response_metadata (expected 'usage_metadata', 'token_usage', or 'usage')"
         )
 
 
@@ -126,25 +145,7 @@ class Operation(Generic[V]):
         self.llm_metadata = llm_metadata
 
     @classmethod
-    def from_openai(
-        cls,
-        value: V,
-        response: Any,
-        *,
-        kind: OperationKind = "unknown",
-        duration_seconds: float = 0.0,
-        time_seconds: float | None = None,
-        cost: float | None = None,
-    ) -> Operation[V]:
-        return cls(
-            value,
-            kind=kind,
-            duration_seconds=duration_seconds,
-            llm_metadata=LLMMetadata.from_openai(response, time_seconds=time_seconds, cost=cost),
-        )
-
-    @classmethod
-    def from_anthropic(
+    def from_ai_message(
         cls,
         value: V,
         message: Any,
@@ -158,7 +159,7 @@ class Operation(Generic[V]):
             value,
             kind=kind,
             duration_seconds=duration_seconds,
-            llm_metadata=LLMMetadata.from_anthropic(message, time_seconds=time_seconds, cost=cost),
+            llm_metadata=LLMMetadata.from_ai_message(message, time_seconds=time_seconds, cost=cost),
         )
 
     def __repr__(self) -> str:
