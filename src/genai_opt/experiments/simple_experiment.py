@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from random import uniform
 
 from genai_opt.experiments import FloatGenome
@@ -53,7 +52,7 @@ def build_simple_experiment(
     )
 
 
-async def run_simple_experiment(
+def run_simple_experiment(
     target: float = TARGET_VALUE,
     iterations: int = DEFAULT_ITERATIONS,
     mutation_rate: float = DEFAULT_MUTATION_RATE,
@@ -65,11 +64,11 @@ async def run_simple_experiment(
         mutation_rate=mutation_rate,
         population_size=population_size,
     ).build()
-    return await engine.run()
+    return engine.run()
 
 
 def main() -> None:
-    asyncio.run(run_simple_experiment())
+    run_simple_experiment()
 
 
 if __name__ == "__main__":

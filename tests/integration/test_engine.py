@@ -1,5 +1,3 @@
-import asyncio
-
 from genai_opt.experiments.float_genome import FloatGenome
 from genai_opt.optimizer_engine.convergence_criterion.convergence_criterion import (
     iteration_limited_convergence,
@@ -47,7 +45,7 @@ def _build_test_engine(iterations=5):
 def test_full_engine_run():
     """Build a complete engine manually and verify it runs end-to-end."""
     engine = _build_test_engine(iterations=5)
-    result = asyncio.run(engine.run())
+    result = engine.run()
 
     assert result.get_genome_count() > 0, "Returned population should have genomes"
     for genome in result.population:
@@ -58,6 +56,6 @@ def test_full_engine_run():
 def test_experiment_convergence():
     """Engine should stop after exactly the configured number of iterations."""
     engine = _build_test_engine(iterations=3)
-    asyncio.run(engine.run())
+    engine.run()
 
     assert engine.iteration == 3, f"Expected 3 iterations, got {engine.iteration}"

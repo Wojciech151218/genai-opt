@@ -1,5 +1,3 @@
-import asyncio
-
 from genai_opt.experiments.simple_experiment import (
     TARGET_VALUE,
     run_simple_experiment,
@@ -7,13 +5,11 @@ from genai_opt.experiments.simple_experiment import (
 
 
 def test_simple_experiment_improves_fitness() -> None:
-    population = asyncio.run(
-        run_simple_experiment(
-            target=TARGET_VALUE,
-            iterations=15,
-            mutation_rate=0.3,
-            population_size=30,
-        )
+    population = run_simple_experiment(
+        target=TARGET_VALUE,
+        iterations=15,
+        mutation_rate=0.3,
+        population_size=30,
     )
 
     best_genome, best_fitness = max(
