@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+from pathlib import Path
 from random import choice
 
 from langchain.chat_models import init_chat_model
@@ -21,9 +22,10 @@ from genai_opt.adapters.simple_system_prompt_genome import (
 )
 from genai_opt.optimizer_engine import (
     ExperimentBuilder,
+    FilesystemCheckpointer,
     Population,
     ReproductionPolicy,
-    TerminalLoggerMetricsCollector,
+    TerminalController,
     cycle_seeds_initial_population,
     cycle_seeds_initial_population_strategy,
     generational_reproduction,
@@ -186,6 +188,7 @@ def build_haiku_experiment(
     mutation_rate: float = DEFAULT_MUTATION_RATE,
     population_size: int = DEFAULT_POPULATION_SIZE,
     shared_task: HumanMessage | None = None,
+    checkpoint_dir: str | Path | None = None,
 ) -> ExperimentBuilder[SimpleSystemPromptPhenotype, HaikuOutput]:
     task_message = shared_task or build_haiku_task_message()
     return ExperimentBuilder(
@@ -200,7 +203,8 @@ def build_haiku_experiment(
             generational_reproduction(population_size),
             tournament_selection,
         ),
-        metrics_collector=TerminalLoggerMetricsCollector(),
+        checkpointer=FilesystemCheckpointer(checkpoint_dir) if checkpoint_dir else None,
+        experiment_controller=TerminalController(),
     )
 
 
@@ -212,15 +216,21 @@ async def run_haiku_experiment(
     mutation_rate: float = DEFAULT_MUTATION_RATE,
     population_size: int = DEFAULT_POPULATION_SIZE,
     shared_task: HumanMessage | None = None,
+    checkpoint_dir: str | Path | None = ".checkpoints/haiku_experiment",
 ) -> Population[SimpleSystemPromptPhenotype, HaikuOutput]:
     chat_model = llm or create_llm(model=model)
-    engine = build_haiku_experiment(
-        chat_model,
-        iterations=iterations,
-        mutation_rate=mutation_rate,
-        population_size=population_size,
-        shared_task=shared_task,
-    ).build()
+    engine = (
+        build_haiku_experiment(
+            chat_model,
+            iterations=iterations,
+            mutation_rate=mutation_rate,
+            population_size=population_size,
+            shared_task=shared_task,
+            checkpoint_dir=checkpoint_dir,
+        )
+        .build()
+        .from_checkpoint()
+    )
     return await engine.run()
 
 

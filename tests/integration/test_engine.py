@@ -5,9 +5,7 @@ from genai_opt.optimizer_engine.convergence_criterion.convergence_criterion impo
     iteration_limited_convergence,
 )
 from genai_opt.optimizer_engine.engine import Engine
-from genai_opt.optimizer_engine.metrics_collector.terminal_logger import (
-    TerminalLoggerMetricsCollector,
-)
+from genai_opt.optimizer_engine.experiment_controller import NullExperimentController
 from genai_opt.optimizer_engine.mutation_policy.mutation_policy import random_mutation
 from genai_opt.optimizer_engine.population import Population
 from genai_opt.optimizer_engine.reproduction_policy.parent_selection import (
@@ -33,14 +31,12 @@ def _build_test_engine(iterations=5):
         generational_reproduction(10),
         tournament_selection,
     )
-    metrics_collector = TerminalLoggerMetricsCollector()
-
     return Engine(
         population=population,
         convergence_criterion=convergence_criterion,
         mutation_policy=mutation_policy,
         reproduction_policy=reproduction_policy,
-        metrics_collector=metrics_collector,
+        experiment_controller=NullExperimentController(),
     )
 
 

@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import asyncio
+from pathlib import Path
 from random import uniform
 
 from genai_opt.experiments import FloatGenome
 from genai_opt.optimizer_engine import (
     ExperimentBuilder,
+    FilesystemCheckpointer,
     Population,
     ReproductionPolicy,
-    TerminalLoggerMetricsCollector,
+    TerminalController,
     generational_reproduction,
     iteration_limited_convergence,
     random_mutation,
@@ -37,6 +39,7 @@ def build_simple_experiment(
     iterations: int = DEFAULT_ITERATIONS,
     mutation_rate: float = DEFAULT_MUTATION_RATE,
     population_size: int = DEFAULT_POPULATION_SIZE,
+    checkpoint_dir: str | Path | None = None,
 ) -> ExperimentBuilder:
     return ExperimentBuilder(
         inital_population_strategy=lambda: create_initial_population(
@@ -49,7 +52,8 @@ def build_simple_experiment(
             generational_reproduction(population_size),
             tournament_selection,
         ),
-        metrics_collector=TerminalLoggerMetricsCollector(),
+        checkpointer=FilesystemCheckpointer(checkpoint_dir) if checkpoint_dir else None,
+        experiment_controller=TerminalController(listen_for_pause=False),
     )
 
 
@@ -58,13 +62,19 @@ async def run_simple_experiment(
     iterations: int = DEFAULT_ITERATIONS,
     mutation_rate: float = DEFAULT_MUTATION_RATE,
     population_size: int = DEFAULT_POPULATION_SIZE,
+    checkpoint_dir: str | Path | None = ".checkpoints/simple_experiment",
 ) -> Population[float, float]:
-    engine = build_simple_experiment(
-        target=target,
-        iterations=iterations,
-        mutation_rate=mutation_rate,
-        population_size=population_size,
-    ).build()
+    engine = (
+        build_simple_experiment(
+            target=target,
+            iterations=iterations,
+            mutation_rate=mutation_rate,
+            population_size=population_size,
+            checkpoint_dir=checkpoint_dir,
+        )
+        .build()
+        .from_checkpoint()
+    )
     return await engine.run()
 
 

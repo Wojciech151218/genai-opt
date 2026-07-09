@@ -13,6 +13,7 @@ def test_simple_experiment_improves_fitness() -> None:
             iterations=15,
             mutation_rate=0.3,
             population_size=30,
+            checkpoint_dir=None,
         )
     )
 

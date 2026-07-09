@@ -1,8 +1,18 @@
+from genai_opt.optimizer_engine.checkpointer import (
+    Checkpointer,
+    FilesystemCheckpointer,
+    NullCheckpointer,
+)
 from genai_opt.optimizer_engine.convergence_criterion import (
     iteration_limited_convergence,
 )
 from genai_opt.optimizer_engine.engine import Engine
 from genai_opt.optimizer_engine.experiment_builder import ExperimentBuilder
+from genai_opt.optimizer_engine.experiment_controller import (
+    ExperimentController,
+    NullExperimentController,
+    TerminalController,
+)
 from genai_opt.optimizer_engine.genome import Genome
 from genai_opt.optimizer_engine.initial_population import (
     cycle_seeds_initial_population,
@@ -22,14 +32,20 @@ from genai_opt.optimizer_engine.reproduction_policy import (
 )
 
 __all__ = [
+    "Checkpointer",
     "Engine",
     "ExperimentBuilder",
+    "ExperimentController",
+    "FilesystemCheckpointer",
     "Genome",
     "IterationMetadata",
     "LLMMetadata",
+    "NullCheckpointer",
+    "NullExperimentController",
     "Operation",
     "Population",
     "ReproductionPolicy",
+    "TerminalController",
     "TerminalLoggerMetricsCollector",
     "cycle_seeds_initial_population",
     "cycle_seeds_initial_population_strategy",
