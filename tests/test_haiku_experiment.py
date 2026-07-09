@@ -18,7 +18,7 @@ class _StubChatModel(BaseChatModel):
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):
         raise NotImplementedError
 
-    def with_structured_output(self, schema):
+    def with_structured_output(self, schema, **kwargs):
         return self
 
 

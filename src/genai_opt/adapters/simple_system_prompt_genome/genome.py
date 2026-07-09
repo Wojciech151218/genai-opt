@@ -17,12 +17,12 @@ class SimpleSystemPromptGenome(Genome[SimpleSystemPromptPhenotype, InvSchema], G
         phenotype: SimpleSystemPromptPhenotype,
         *,
         invocation_schema: type[InvSchema],
-        invoke_function: Callable[[SimpleSystemPromptPhenotype], Awaitable[InvSchema]],
-        evaluate_function: Callable[[InvSchema], Awaitable[float]],
-        mutate_function: Callable[[SimpleSystemPromptPhenotype], SimpleSystemPromptPhenotype],
+        invoke_function: Callable[[SimpleSystemPromptPhenotype], Awaitable[Operation[InvSchema]]],
+        evaluate_function: Callable[[InvSchema], Awaitable[Operation[float]]],
+        mutate_function: Callable[[SimpleSystemPromptPhenotype], Operation[SimpleSystemPromptPhenotype]],
         crossover_function: Callable[
             [SimpleSystemPromptPhenotype, SimpleSystemPromptPhenotype],
-            SimpleSystemPromptPhenotype,
+            Operation[SimpleSystemPromptPhenotype],
         ],
     ):
         super().__init__(phenotype=phenotype)
@@ -42,14 +42,24 @@ class SimpleSystemPromptGenome(Genome[SimpleSystemPromptPhenotype, InvSchema], G
             crossover_function=self._crossover_function,
         )
 
+    def _child_operation(self, operation: Operation[SimpleSystemPromptPhenotype]) -> Operation[Self]:
+        """Turn a phenotype operation into a genome operation, keeping id and metadata."""
+        return Operation(
+            self._child(operation.value),
+            kind=operation.kind,
+            duration_seconds=operation.duration_seconds,
+            llm_metadata=operation.llm_metadata,
+            id=operation.id,
+        )
+
     async def invoke(self) -> Operation[InvSchema]:
-        return Operation(await self._invoke_function(self.phenotype))
+        return await self._invoke_function(self.phenotype)
 
     async def evaluate(self) -> Operation[float]:
-        return Operation(await self._evaluate_function(self.invocation))
+        return await self._evaluate_function(self.invocation)
 
     async def mutate(self) -> Operation[Self]:
-        return Operation(self._child(self._mutate_function(self.phenotype)))
+        return self._child_operation(self._mutate_function(self.phenotype))
 
     async def crossover(self, other: Self) -> Operation[Self]:
-        return Operation(self._child(self._crossover_function(self.phenotype, other.phenotype)))
+        return self._child_operation(self._crossover_function(self.phenotype, other.phenotype))
