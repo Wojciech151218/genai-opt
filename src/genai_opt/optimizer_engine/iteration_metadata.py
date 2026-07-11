@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Generic
 
+from genai_opt.optimizer_engine.engine_state import IterationPhase
 from genai_opt.optimizer_engine.operation import Operation, OperationKind
 from genai_opt.optimizer_engine.utils.typevars import Inv, P
 
@@ -20,6 +21,7 @@ class PhenotypeState(Generic[P, Inv]):
 @dataclass
 class IterationMetadata(Generic[P, Inv]):
     iteration: int
+    phase: IterationPhase | None = None
     phenotype_states: list[PhenotypeState[P, Inv]] = field(default_factory=list)
     operations: list[Operation] = field(default_factory=list)
 
@@ -47,6 +49,7 @@ class IterationMetadata(Generic[P, Inv]):
         iteration: int,
         population: Population[P, Inv],
         operations: list[Operation],
+        phase: IterationPhase | None = None,
     ) -> IterationMetadata[P, Inv]:
         phenotype_states: list[PhenotypeState[P, Inv]] = []
         for genome in population.population:
@@ -69,6 +72,7 @@ class IterationMetadata(Generic[P, Inv]):
             )
         return cls(
             iteration=iteration,
+            phase=phase,
             phenotype_states=phenotype_states,
             operations=operations,
         )

@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
+from genai_opt.optimizer_engine.engine_state import IterationPhase
 from genai_opt.optimizer_engine.iteration_metadata import IterationMetadata
+from genai_opt.optimizer_engine.operation import Operation
 
 
 class ExperimentController(ABC):
@@ -25,6 +27,10 @@ class ExperimentController(ABC):
     @abstractmethod
     async def control_iteration(self, iteration_metadata: IterationMetadata) -> None:
         raise NotImplementedError("ExperimentController.control_iteration() is not implemented")
+
+    async def control_operation(self, iteration: int, phase: IterationPhase, operation: Operation) -> None:
+        """Receive an operation as it becomes available within a phase."""
+        return None
 
 
 class NullExperimentController(ExperimentController):

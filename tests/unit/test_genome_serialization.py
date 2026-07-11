@@ -13,6 +13,7 @@ from genai_opt.adapters.simple_system_prompt_genome.helpers import llm_to_config
 from genai_opt.experiments.float_genome import FloatGenome
 from genai_opt.experiments.haiku_experiment import HaikuOutput, evaluate_haiku_function
 from genai_opt.optimizer_engine.checkpointer.filesystem import FilesystemCheckpointer
+from genai_opt.optimizer_engine.engine_state import EngineState, IterationPhase
 from genai_opt.optimizer_engine.iteration_metadata import IterationMetadata
 from genai_opt.optimizer_engine.operation import Operation
 from genai_opt.optimizer_engine.population import Population
@@ -127,10 +128,16 @@ def test_filesystem_checkpointer_json_roundtrip(tmp_path) -> None:
 
     metadata = IterationMetadata.from_population(iteration=1, population=population, operations=[])
     checkpointer = FilesystemCheckpointer(tmp_path)
-    checkpointer.save_checkpoint(population, 1, metadata)
+    checkpointer.save_checkpoint(
+        EngineState(population=population, iteration=1, phase=IterationPhase.MUTATE),
+        metadata,
+    )
 
-    restored_population, iteration = checkpointer.load()
-    assert iteration == 1
+    state = checkpointer.load()
+    assert state is not None
+    assert state.iteration == 1
+    assert state.phase is IterationPhase.MUTATE
+    restored_population = state.population
     assert restored_population.get_genome_count() == 2
     assert restored_population.population[0].phenotype == 10.0
     assert restored_population.population[0].evaluation == 90.0

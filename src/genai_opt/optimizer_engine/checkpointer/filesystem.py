@@ -1,22 +1,15 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Generic
+from typing import Any
 
 from genai_opt.optimizer_engine.checkpointer.checkpointer import Checkpointer
-from genai_opt.optimizer_engine.genome import Genome
+from genai_opt.optimizer_engine.engine_state import EngineState, IterationPhase
 from genai_opt.optimizer_engine.iteration_metadata import IterationMetadata
 from genai_opt.optimizer_engine.operation import Operation
 from genai_opt.optimizer_engine.population import Population
 from genai_opt.optimizer_engine.utils.typevars import Inv, P
-
-
-@dataclass
-class _CheckpointPayload(Generic[P, Inv]):
-    iteration: int
-    population: Population[P, Inv]
 
 
 class FilesystemCheckpointer(Checkpointer[P, Inv]):
@@ -40,15 +33,18 @@ class FilesystemCheckpointer(Checkpointer[P, Inv]):
 
     def save_checkpoint(
         self,
-        population: Population[P, Inv],
-        iteration: int,
+        state: EngineState[P, Inv],
         iteration_metadata: IterationMetadata[P, Inv],
     ) -> None:
         self.directory.mkdir(parents=True, exist_ok=True)
 
         payload = {
-            "iteration": iteration,
-            "genomes": population.to_json(),
+            "iteration": state.iteration,
+            "phase": state.phase.value,
+            "population": state.population.to_json(),
+            "offspring_population": (
+                state.offspring_population.to_json() if state.offspring_population is not None else None
+            ),
         }
 
         temp_checkpoint = self._checkpoint_path.with_suffix(".json.tmp")
@@ -62,7 +58,7 @@ class FilesystemCheckpointer(Checkpointer[P, Inv]):
             json.dump(meta, handle, indent=2)
         temp_metadata.replace(self._metadata_path)
 
-    def load(self, **context: Any) -> tuple[Population[P, Inv], int] | None:
+    def load(self, **context: Any) -> EngineState[P, Inv] | None:
         if not self._checkpoint_path.exists():
             return None
 
@@ -73,13 +69,30 @@ class FilesystemCheckpointer(Checkpointer[P, Inv]):
             raise ValueError(f"Unrecognized checkpoint format in {self._checkpoint_path}")
 
         iteration = payload.get("iteration")
-        genomes = payload.get("genomes")
+        genomes = payload.get("population", payload.get("genomes"))
         if not isinstance(iteration, int) or not isinstance(genomes, list):
             raise ValueError(f"Unrecognized checkpoint format in {self._checkpoint_path}")
 
         restore_context = {**self._restore_context, **context}
         population = Population.from_json(genomes, **restore_context)
-        return population, iteration
+        phase_value = payload.get("phase", IterationPhase.EVALUATE_POPULATION.value)
+        try:
+            phase = IterationPhase(phase_value)
+        except ValueError as error:
+            raise ValueError(f"Unrecognized checkpoint phase in {self._checkpoint_path}: {phase_value!r}") from error
+
+        offspring_data = payload.get("offspring_population")
+        if offspring_data is not None and not isinstance(offspring_data, list):
+            raise ValueError(f"Unrecognized offspring population in {self._checkpoint_path}")
+        offspring_population = (
+            Population.from_json(offspring_data, **restore_context) if offspring_data is not None else None
+        )
+        return EngineState(
+            population=population,
+            iteration=iteration,
+            phase=phase,
+            offspring_population=offspring_population,
+        )
 
     def _metadata_to_dict(self, iteration_metadata: IterationMetadata[P, Inv]) -> dict[str, Any]:
         fitnesses = [
@@ -87,6 +100,7 @@ class FilesystemCheckpointer(Checkpointer[P, Inv]):
         ]
         return {
             "iteration": iteration_metadata.iteration,
+            "phase": iteration_metadata.phase.value if iteration_metadata.phase is not None else None,
             "population_size": len(iteration_metadata.phenotype_states),
             "best_fitness": max(fitnesses) if fitnesses else None,
             "worst_fitness": min(fitnesses) if fitnesses else None,

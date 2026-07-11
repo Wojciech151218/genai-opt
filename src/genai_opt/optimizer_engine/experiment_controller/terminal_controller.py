@@ -7,6 +7,7 @@ import termios
 import tty
 from datetime import datetime
 
+from genai_opt.optimizer_engine.engine_state import IterationPhase
 from genai_opt.optimizer_engine.experiment_controller.experiment_controller import ExperimentController
 from genai_opt.optimizer_engine.iteration_metadata import IterationMetadata
 from genai_opt.optimizer_engine.operation import Operation, OperationKind
@@ -36,18 +37,17 @@ class TerminalController(ExperimentController):
         super().__init__()
         self.listen_for_pause = listen_for_pause and sys.stdin.isatty()
         self._listener_task: asyncio.Task[None] | None = None
-        self._last_phase: str | None = None
 
     async def setup(self) -> None:
         if self.listen_for_pause:
             self._listener_task = asyncio.create_task(self._listen_for_pause_key())
 
     async def control_iteration(self, iteration_metadata: IterationMetadata[P, Inv]) -> None:
-        phase = self._infer_phase(iteration_metadata)
-        for operation in iteration_metadata.operations:
-            self._log_operation(operation)
+        phase = iteration_metadata.phase.value if iteration_metadata.phase is not None else "unknown"
         self._log_phase_summary(phase, iteration_metadata)
-        self._last_phase = phase
+
+    async def control_operation(self, iteration: int, phase: IterationPhase, operation: Operation) -> None:
+        self._log_operation(operation)
 
     async def _listen_for_pause_key(self) -> None:
         loop = asyncio.get_running_loop()
@@ -79,18 +79,6 @@ class TerminalController(ExperimentController):
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
         return None
-
-    def _infer_phase(self, iteration_metadata: IterationMetadata[P, Inv]) -> str:
-        kinds = {operation.kind for operation in iteration_metadata.operations}
-        if kinds == {"invoke", "evaluate"} or kinds == {"evaluate"}:
-            return "evaluate_population" if self._last_phase is None else "evaluate_offspring"
-        if "crossover" in kinds:
-            return "reproduce"
-        if kinds == {"mutation"}:
-            return "mutate"
-        if "invoke" in kinds and "evaluate" in kinds and len(kinds) == 2:
-            return "evaluate_offspring"
-        return "evaluate_population"
 
     def _log_phase_summary(self, phase: str, iteration_metadata: IterationMetadata[P, Inv]) -> None:
         fitnesses = [state.fitness for state in iteration_metadata.phenotype_states if state.fitness is not None]
