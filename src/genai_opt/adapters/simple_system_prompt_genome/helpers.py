@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from langchain.chat_models import init_chat_model
+from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.prompts import (
     ChatPromptTemplate,
     MessagesPlaceholder,
@@ -11,6 +13,7 @@ from langchain_core.prompts import (
 from pydantic import BaseModel
 
 from genai_opt.adapters.simple_system_prompt_genome.types import SystemPrompt
+from genai_opt.env import load_project_env
 from genai_opt.optimizer_engine.operation import Operation
 
 
@@ -83,3 +86,26 @@ def build_operation[V](
         except ValueError:
             pass
     return Operation(value)
+
+
+def llm_to_config(llm: BaseChatModel) -> dict[str, Any]:
+    config: dict[str, Any] = {}
+    for key in ("model", "model_name", "temperature", "model_provider", "max_tokens"):
+        value = getattr(llm, key, None)
+        if value is not None:
+            config[key] = value
+    model = config.get("model") or config.get("model_name")
+    if model is not None:
+        config["model"] = model
+    return config
+
+
+def llm_from_config(config: dict[str, Any], *, api_key: str | None = None) -> BaseChatModel:
+    load_project_env()
+    model = config.get("model") or config.get("model_name")
+    if model is None:
+        raise ValueError("LLM config must include 'model' or 'model_name'")
+    kwargs = {key: config[key] for key in ("temperature", "model_provider", "max_tokens") if key in config}
+    if api_key is not None:
+        kwargs["api_key"] = api_key
+    return init_chat_model(model, **kwargs)

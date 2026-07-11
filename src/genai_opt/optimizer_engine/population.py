@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-from typing import Generic
+from typing import Any, Generic
 
 from genai_opt.optimizer_engine.genome import Genome
 from genai_opt.optimizer_engine.operation import Operation
@@ -12,6 +12,13 @@ from genai_opt.optimizer_engine.utils.typevars import Inv, P
 class Population(Generic[P, Inv]):
     def __init__(self, population: list[Genome[P, Inv]] | None = None):
         self.population: list[Genome[P, Inv]] = [] if population is None else population
+
+    def to_json(self) -> list[dict[str, Any]]:
+        return [genome.to_json() for genome in self.population]
+
+    @classmethod
+    def from_json(cls, data: list[dict[str, Any]], **context: Any) -> Population[P, Inv]:
+        return cls([Genome.from_json(genome_data, **context) for genome_data in data])
 
     def add_genome(self, genome: Genome[P, Inv]) -> None:
         self.population.append(genome)

@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import json
-import pickle
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Generic
 
 from genai_opt.optimizer_engine.checkpointer.checkpointer import Checkpointer
+from genai_opt.optimizer_engine.genome import Genome
 from genai_opt.optimizer_engine.iteration_metadata import IterationMetadata
 from genai_opt.optimizer_engine.operation import Operation
 from genai_opt.optimizer_engine.population import Population
@@ -22,15 +22,21 @@ class _CheckpointPayload(Generic[P, Inv]):
 class FilesystemCheckpointer(Checkpointer[P, Inv]):
     """Persists engine state to disk between iterations.
 
-    Genomes are stored as pickle (``checkpoint.pkl``). A human-readable JSON
-    summary (``checkpoint_meta.json``) records iteration stats and operation
-    metadata for inspection.
+    Genomes are stored as JSON (``checkpoint.json``) via each genome's
+    ``to_json`` / ``from_json`` methods. A human-readable JSON summary
+    (``checkpoint_meta.json``) records iteration stats and operation metadata.
     """
 
-    def __init__(self, directory: str | Path):
+    def __init__(
+        self,
+        directory: str | Path,
+        *,
+        restore_context: dict[str, Any] | None = None,
+    ):
         self.directory = Path(directory)
-        self._checkpoint_path = self.directory / "checkpoint.pkl"
+        self._checkpoint_path = self.directory / "checkpoint.json"
         self._metadata_path = self.directory / "checkpoint_meta.json"
+        self._restore_context = restore_context or {}
 
     def save_checkpoint(
         self,
@@ -40,11 +46,14 @@ class FilesystemCheckpointer(Checkpointer[P, Inv]):
     ) -> None:
         self.directory.mkdir(parents=True, exist_ok=True)
 
-        payload = _CheckpointPayload(iteration=iteration, population=population)
+        payload = {
+            "iteration": iteration,
+            "genomes": population.to_json(),
+        }
 
-        temp_checkpoint = self._checkpoint_path.with_suffix(".pkl.tmp")
-        with temp_checkpoint.open("wb") as handle:
-            pickle.dump(payload, handle)
+        temp_checkpoint = self._checkpoint_path.with_suffix(".json.tmp")
+        with temp_checkpoint.open("w", encoding="utf-8") as handle:
+            json.dump(payload, handle, indent=2)
         temp_checkpoint.replace(self._checkpoint_path)
 
         meta = self._metadata_to_dict(iteration_metadata)
@@ -53,21 +62,24 @@ class FilesystemCheckpointer(Checkpointer[P, Inv]):
             json.dump(meta, handle, indent=2)
         temp_metadata.replace(self._metadata_path)
 
-    def load(self) -> tuple[Population[P, Inv], int] | None:
+    def load(self, **context: Any) -> tuple[Population[P, Inv], int] | None:
         if not self._checkpoint_path.exists():
             return None
 
-        with self._checkpoint_path.open("rb") as handle:
-            payload = pickle.load(handle)
+        with self._checkpoint_path.open(encoding="utf-8") as handle:
+            payload = json.load(handle)
 
-        if isinstance(payload, _CheckpointPayload):
-            return payload.population, payload.iteration
+        if not isinstance(payload, dict):
+            raise ValueError(f"Unrecognized checkpoint format in {self._checkpoint_path}")
 
-        if isinstance(payload, tuple) and len(payload) == 2:
-            population, iteration = payload
-            return population, iteration
+        iteration = payload.get("iteration")
+        genomes = payload.get("genomes")
+        if not isinstance(iteration, int) or not isinstance(genomes, list):
+            raise ValueError(f"Unrecognized checkpoint format in {self._checkpoint_path}")
 
-        raise ValueError(f"Unrecognized checkpoint format in {self._checkpoint_path}")
+        restore_context = {**self._restore_context, **context}
+        population = Population.from_json(genomes, **restore_context)
+        return population, iteration
 
     def _metadata_to_dict(self, iteration_metadata: IterationMetadata[P, Inv]) -> dict[str, Any]:
         fitnesses = [

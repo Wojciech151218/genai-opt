@@ -215,6 +215,20 @@ def create_haiku_genome(
     )
 
 
+def haiku_checkpoint_restore_context(
+    llm: BaseChatModel,
+    task_message: HumanMessage,
+) -> dict[str, object]:
+    return {
+        "invocation_schema": HaikuOutput,
+        "invoke_function": invoke_task_message_function(task_message, HaikuOutput),
+        "evaluate_function": evaluate_haiku_function(llm),
+        "mutate_function": mutate_prompt_function(MUTATE_PROMPT, llm),
+        "crossover_function": crossover_prompt_function(CROSSOVER_PROMPT, llm),
+        "llm": llm,
+    }
+
+
 def create_initial_population(
     llm: BaseChatModel,
     population_size: int = DEFAULT_POPULATION_SIZE,
@@ -251,7 +265,12 @@ def build_haiku_experiment(
             generational_reproduction(population_size),
             tournament_selection,
         ),
-        checkpointer=FilesystemCheckpointer(checkpoint_dir) if checkpoint_dir else None,
+        checkpointer=FilesystemCheckpointer(
+            checkpoint_dir,
+            restore_context=haiku_checkpoint_restore_context(llm, task_message),
+        )
+        if checkpoint_dir
+        else None,
         experiment_controller=TerminalController(),
     )
 

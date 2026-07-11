@@ -63,8 +63,8 @@ class Engine(Generic[P, Inv]):
     def get_population(self) -> Population[P, Inv]:
         return self.population
 
-    def from_checkpoint(self) -> Self:
-        checkpoint = self.checkpointer.load()
+    def from_checkpoint(self, **context) -> Self:
+        checkpoint = self.checkpointer.load(**context)
         if checkpoint is not None:
             checkpoint_population, checkpoint_iteration = checkpoint
             self.population = checkpoint_population
