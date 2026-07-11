@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import asyncio
 import os
+import time
+from collections.abc import Awaitable, Callable
 from pathlib import Path
 from random import choice
 
 from langchain.chat_models import init_chat_model
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
+from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
 
 from genai_opt.adapters.simple_system_prompt_genome import (
@@ -15,11 +18,12 @@ from genai_opt.adapters.simple_system_prompt_genome import (
     SimpleSystemPromptPhenotype,
     SystemPrompt,
     crossover_prompt_function,
-    evaluate_prompt_function,
     invoke_task_message_function,
     mutate_prompt_function,
     render_system_prompt,
 )
+from genai_opt.adapters.simple_system_prompt_genome.helpers import build_operation, extract_parsed
+from genai_opt.env import load_project_env
 from genai_opt.optimizer_engine import (
     ExperimentBuilder,
     FilesystemCheckpointer,
@@ -33,11 +37,13 @@ from genai_opt.optimizer_engine import (
     random_mutation,
     tournament_selection,
 )
+from genai_opt.optimizer_engine.operation import Operation
 
 DEFAULT_ITERATIONS = 5
 DEFAULT_MUTATION_RATE = 0.35
 DEFAULT_POPULATION_SIZE = 8
 DEFAULT_MODEL = "gpt-4o-mini"
+OPENAI_API_KEY_ENV = "OPENAI_API_KEY"
 
 CULTURAL_THEMES = (
     "hanami (cherry blossom viewing) and mono no aware",
@@ -98,44 +104,86 @@ Merge the best ideas from both into a single prompt that encourages poetic \
 haiku with authentic cultural significance.
 
 Prompt A:
-{self}
+{prompt_a}
 
 Prompt B:
-{other}
+{prompt_b}
 
 Return one unified system prompt."""
 
 EVALUATE_PROMPT = """\
-You judge haiku outputs for an evolutionary optimizer.
+You are a haiku judge.
 
 Score the candidate on:
 - Poetic quality (imagery, rhythm, restraint)
-- Syllable structure (classic 5-7-5 intent in English)
 - Cultural significance (kigo, tradition, aesthetics, specific cultural context)
-
-Candidate output (JSON):
-{output}
-
-Return a score from 0 to 100. Reserve 90+ for masterful, culturally grounded haiku."""
+"""
 
 
 class HaikuOutput(BaseModel):
     line_one: str = Field(description="First line (~5 syllables)")
     line_two: str = Field(description="Second line (~7 syllables)")
     line_three: str = Field(description="Third line (~5 syllables)")
-    cultural_reference: str = Field(description="The Japanese tradition, festival, aesthetic, or symbol referenced")
-    significance: str = Field(description="One sentence on why the haiku carries cultural weight")
 
 
 class HaikuEvaluation(BaseModel):
-    score: float = Field(description="Overall fitness from 0 to 100 for poetic and cultural quality")
+    cultural_reference: list[str] = Field(
+        description="List of the Japanese tradition, festival, aesthetic, or symbol referenced"
+    )
+    significance: int = Field(
+        description="Your judgement of the cultural significance of the haiku from 0 to 100",
+        ge=0,
+        le=100,
+    )
+
+
+def _is_valid_haiku_structure(invocation: HaikuOutput) -> bool:
+    return (
+        len(invocation.line_one.split()) == 5
+        and len(invocation.line_two.split()) == 7
+        and len(invocation.line_three.split()) == 5
+    )
+
+
+def evaluate_haiku_function(
+    llm: BaseChatModel,
+) -> Callable[[HaikuOutput], Awaitable[Operation[float]]]:
+    async def evaluate(invocation: HaikuOutput) -> Operation[float]:
+        if not _is_valid_haiku_structure(invocation):
+            return Operation(0.0)
+
+        haiku = f"{invocation.line_one}\n{invocation.line_two}\n{invocation.line_three}"
+        prompt_template = ChatPromptTemplate.from_messages(
+            [
+                ("system", EVALUATE_PROMPT),
+                ("human", "{haiku}"),
+            ]
+        )
+        structured_llm = llm.with_structured_output(HaikuEvaluation, include_raw=True)
+        start = time.perf_counter()
+        result = await (prompt_template | structured_llm).ainvoke({"haiku": haiku})
+        elapsed = time.perf_counter() - start
+        evaluation = extract_parsed(result)
+        score = float(len(evaluation.cultural_reference) * evaluation.significance)
+        return build_operation(score, result, time_seconds=elapsed)
+
+    return evaluate
 
 
 def create_llm(
     model: str = DEFAULT_MODEL,
     temperature: float = 0.8,
+    *,
+    api_key: str | None = None,
 ) -> BaseChatModel:
-    return init_chat_model(model, temperature=temperature)
+    load_project_env()
+    resolved_api_key = api_key or os.getenv(OPENAI_API_KEY_ENV)
+    if not resolved_api_key:
+        raise RuntimeError(
+            f"Set {OPENAI_API_KEY_ENV} or pass api_key to create_llm(), "
+            "or pass a configured chat model to run_haiku_experiment()."
+        )
+    return init_chat_model(model, temperature=temperature, api_key=resolved_api_key)
 
 
 def build_haiku_task_message(theme: str | None = None) -> HumanMessage:
@@ -161,7 +209,7 @@ def create_haiku_genome(
         phenotype=phenotype,
         invocation_schema=HaikuOutput,
         invoke_function=invoke_task_message_function(task, HaikuOutput),
-        evaluate_function=evaluate_prompt_function(EVALUATE_PROMPT, llm, HaikuEvaluation),
+        evaluate_function=evaluate_haiku_function(llm),
         mutate_function=mutate_prompt_function(MUTATE_PROMPT, llm),
         crossover_function=crossover_prompt_function(CROSSOVER_PROMPT, llm),
     )
@@ -212,13 +260,14 @@ async def run_haiku_experiment(
     llm: BaseChatModel | None = None,
     *,
     model: str = DEFAULT_MODEL,
+    api_key: str | None = None,
     iterations: int = DEFAULT_ITERATIONS,
     mutation_rate: float = DEFAULT_MUTATION_RATE,
     population_size: int = DEFAULT_POPULATION_SIZE,
     shared_task: HumanMessage | None = None,
     checkpoint_dir: str | Path | None = ".checkpoints/haiku_experiment",
 ) -> Population[SimpleSystemPromptPhenotype, HaikuOutput]:
-    chat_model = llm or create_llm(model=model)
+    chat_model = llm or create_llm(model=model, api_key=api_key)
     engine = (
         build_haiku_experiment(
             chat_model,
@@ -235,9 +284,7 @@ async def run_haiku_experiment(
 
 
 def format_haiku(haiku: HaikuOutput) -> str:
-    return (
-        f"{haiku.line_one}\n{haiku.line_two}\n{haiku.line_three}\n  → {haiku.cultural_reference}: {haiku.significance}"
-    )
+    return f"{haiku.line_one}\n{haiku.line_two}\n{haiku.line_three}"
 
 
 def print_best_result(population: Population[SimpleSystemPromptPhenotype, HaikuOutput]) -> None:
@@ -254,12 +301,6 @@ def print_best_result(population: Population[SimpleSystemPromptPhenotype, HaikuO
 
 
 def main() -> None:
-    if not os.getenv("OPENAI_API_KEY"):
-        raise RuntimeError(
-            "Set OPENAI_API_KEY before running the haiku experiment, "
-            "or pass a configured chat model to run_haiku_experiment()."
-        )
-
     population = asyncio.run(
         run_haiku_experiment(
             iterations=DEFAULT_ITERATIONS,

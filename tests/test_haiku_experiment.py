@@ -2,7 +2,9 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 
 from genai_opt.experiments.haiku_experiment import (
+    HaikuOutput,
     SEED_SYSTEM_PROMPTS,
+    _is_valid_haiku_structure,
     build_haiku_experiment,
     build_haiku_task_message,
     create_haiku_genome,
@@ -58,3 +60,19 @@ def test_create_haiku_genome_configures_functions() -> None:
     assert callable(genome._crossover_function)
     assert callable(genome._evaluate_function)
     assert callable(genome._invoke_function)
+
+
+def test_is_valid_haiku_structure_checks_word_counts() -> None:
+    valid = HaikuOutput(
+        line_one="one two three four five",
+        line_two="one two three four five six seven",
+        line_three="one two three four five",
+    )
+    invalid = HaikuOutput(
+        line_one="too few words",
+        line_two="one two three four five six seven",
+        line_three="one two three four five",
+    )
+
+    assert _is_valid_haiku_structure(valid) is True
+    assert _is_valid_haiku_structure(invalid) is False

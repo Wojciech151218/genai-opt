@@ -89,8 +89,8 @@ def crossover_prompt_function(
         start = time.perf_counter()
         result = (prompt | structured_llm).invoke(
             {
-                "self": render_system_prompt(self_phenotype.system_prompt),
-                "other": render_system_prompt(other_phenotype.system_prompt),
+                "prompt_a": render_system_prompt(self_phenotype.system_prompt),
+                "prompt_b": render_system_prompt(other_phenotype.system_prompt),
             }
         )
         elapsed = time.perf_counter() - start
