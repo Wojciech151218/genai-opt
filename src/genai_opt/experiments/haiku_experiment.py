@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 import time
 from collections.abc import Awaitable, Callable
 from pathlib import Path
@@ -137,11 +138,30 @@ class HaikuEvaluation(BaseModel):
     )
 
 
+_VOWEL_GROUPS = re.compile(r"[aeiouy]+", re.IGNORECASE)
+_NON_LETTER = re.compile(r"[^a-z']")
+
+
+def _count_word_syllables(word: str) -> int:
+    word = _NON_LETTER.sub("", word.lower())
+    if not word:
+        return 0
+
+    count = len(_VOWEL_GROUPS.findall(word))
+    if word.endswith("e") and count > 1:
+        count -= 1
+    return max(count, 1)
+
+
+def _count_line_syllables(line: str) -> int:
+    return sum(_count_word_syllables(word) for word in line.split())
+
+
 def _is_valid_haiku_structure(invocation: HaikuOutput) -> bool:
     return (
-        len(invocation.line_one.split()) == 5
-        and len(invocation.line_two.split()) == 7
-        and len(invocation.line_three.split()) == 5
+        _count_line_syllables(invocation.line_one) == 5
+        and _count_line_syllables(invocation.line_two) == 7
+        and _count_line_syllables(invocation.line_three) == 5
     )
 
 

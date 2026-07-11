@@ -62,16 +62,16 @@ def test_create_haiku_genome_configures_functions() -> None:
     assert callable(genome._invoke_function)
 
 
-def test_is_valid_haiku_structure_checks_word_counts() -> None:
+def test_is_valid_haiku_structure_checks_syllable_counts() -> None:
     valid = HaikuOutput(
-        line_one="one two three four five",
-        line_two="one two three four five six seven",
-        line_three="one two three four five",
+        line_one="An old silent pond",
+        line_two="A frog jumps into the pond",
+        line_three="Splash! Silence again",
     )
     invalid = HaikuOutput(
-        line_one="too few words",
-        line_two="one two three four five six seven",
-        line_three="one two three four five",
+        line_one="An old pond",
+        line_two="A frog jumps into the pond",
+        line_three="Splash! Silence again",
     )
 
     assert _is_valid_haiku_structure(valid) is True
