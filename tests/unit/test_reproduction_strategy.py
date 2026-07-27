@@ -20,5 +20,7 @@ def test_generational_reproduction_size():
     asyncio.run(pop.evaluate_population())
 
     reproduce = generational_reproduction(5)(tournament_selection)
-    new_pop = asyncio.run(reproduce(pop))
+    new_pop, operations = asyncio.run(reproduce(pop))
     assert new_pop.get_genome_count() == 5
+    assert len(operations) == 5
+    assert all(operation.kind == "crossover" for operation in operations)

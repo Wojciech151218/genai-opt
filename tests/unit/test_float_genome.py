@@ -43,9 +43,11 @@ def test_float_genome_evaluate_calculates_fitness():
 
 
 def test_float_genome_mutate_returns_new_genome():
-    """mutate() returns a new FloatGenome instance."""
+    """_mutate() returns an Operation whose value is a new FloatGenome."""
     genome = FloatGenome(phenotype=50.0)
-    mutated = asyncio.run(genome.mutate())
+    operation = asyncio.run(genome._mutate())
+    mutated = operation.value
+    assert operation.kind == "mutation"
     assert mutated is not genome
     assert isinstance(mutated, FloatGenome)
 
@@ -54,5 +56,6 @@ def test_float_genome_crossover_averages():
     """Crossover of 40.0 and 60.0 should produce child with phenotype 50.0."""
     parent_a = FloatGenome(phenotype=40.0, target=50.0)
     parent_b = FloatGenome(phenotype=60.0, target=50.0)
-    child = asyncio.run(parent_a.crossover(parent_b))
-    assert child.phenotype == pytest.approx(50.0)
+    operation = asyncio.run(parent_a._crossover(parent_b))
+    assert operation.kind == "crossover"
+    assert operation.value.phenotype == pytest.approx(50.0)

@@ -2,8 +2,8 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 
 from genai_opt.experiments.haiku_experiment import (
-    SEED_SYSTEM_PROMPTS,
     HaikuOutput,
+    SEED_SYSTEM_PROMPTS,
     _is_valid_haiku_structure,
     build_haiku_experiment,
     build_haiku_task_message,
@@ -20,7 +20,7 @@ class _StubChatModel(BaseChatModel):
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):
         raise NotImplementedError
 
-    def with_structured_output(self, schema):
+    def with_structured_output(self, schema, **kwargs):
         return self
 
 
@@ -62,16 +62,16 @@ def test_create_haiku_genome_configures_functions() -> None:
     assert callable(genome._invoke_function)
 
 
-def test_is_valid_haiku_structure_checks_word_counts() -> None:
+def test_is_valid_haiku_structure_checks_syllable_counts() -> None:
     valid = HaikuOutput(
-        line_one="one two three four five",
-        line_two="one two three four five six seven",
-        line_three="one two three four five",
+        line_one="An old silent pond",
+        line_two="A frog jumps into the pond",
+        line_three="Splash! Silence again",
     )
     invalid = HaikuOutput(
-        line_one="too few words",
-        line_two="one two three four five six seven",
-        line_three="one two three four five",
+        line_one="An old pond",
+        line_two="A frog jumps into the pond",
+        line_three="Splash! Silence again",
     )
 
     assert _is_valid_haiku_structure(valid) is True

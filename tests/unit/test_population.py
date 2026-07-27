@@ -5,7 +5,32 @@ import asyncio
 import pytest
 
 from genai_opt.experiments.float_genome import FloatGenome
+from genai_opt.optimizer_engine.genome import Genome
+from genai_opt.optimizer_engine.operation import Operation
 from genai_opt.optimizer_engine.population import Population
+
+
+class _RecordingGenome(Genome[str, str]):
+    def __init__(self, name: str, events: list[str], invoke_gate: asyncio.Event | None = None) -> None:
+        super().__init__(name)
+        self.events = events
+        self.invoke_gate = invoke_gate
+
+    async def invoke(self) -> Operation[str]:
+        self.events.append(f"invoke:{self.phenotype}")
+        if self.invoke_gate is not None:
+            await self.invoke_gate.wait()
+        return Operation(self.phenotype)
+
+    async def evaluate(self) -> Operation[float]:
+        self.events.append(f"evaluate:{self.phenotype}")
+        return Operation(1.0)
+
+    async def mutate(self) -> Operation["_RecordingGenome"]:
+        return Operation(self)
+
+    async def crossover(self, other: Genome[str, str]) -> Operation["_RecordingGenome"]:
+        return Operation(self)
 
 
 def _make_population(*values: float, target: float = 50.0) -> Population:
@@ -43,6 +68,32 @@ def test_population_evaluate_all():
     fitnesses = [g.evaluation for g in pop.population]
     assert fitnesses[0] == pytest.approx(100.0)
     assert fitnesses[1] == pytest.approx(90.0)
+
+
+def test_population_evaluates_a_genome_before_other_invocations_finish():
+    async def evaluate_stream() -> list[Operation]:
+        events: list[str] = []
+        slow_invoke_gate = asyncio.Event()
+        population = Population(
+            [
+                _RecordingGenome("slow", events, slow_invoke_gate),
+                _RecordingGenome("fast", events),
+            ]
+        )
+        stream = population.evaluate_population_stream()
+
+        first_operation = await anext(stream)
+        second_operation = await anext(stream)
+
+        assert first_operation.kind == "invoke"
+        assert second_operation.kind == "evaluate"
+        assert events == ["invoke:slow", "invoke:fast", "evaluate:fast"]
+
+        slow_invoke_gate.set()
+        return [first_operation, second_operation, *[operation async for operation in stream]]
+
+    operations = asyncio.run(evaluate_stream())
+    assert [operation.kind for operation in operations] == ["invoke", "evaluate", "invoke", "evaluate"]
 
 
 def test_population_merge():

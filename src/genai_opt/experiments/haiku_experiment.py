@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import os
+import re
+import time
 from collections.abc import Awaitable, Callable
+from pathlib import Path
 from random import choice
 
 from langchain.chat_models import init_chat_model
@@ -19,11 +22,14 @@ from genai_opt.adapters.simple_system_prompt_genome import (
     mutate_prompt_function,
     render_system_prompt,
 )
+from genai_opt.adapters.simple_system_prompt_genome.helpers import build_operation, extract_parsed
+from genai_opt.env import load_project_env
 from genai_opt.optimizer_engine import (
     ExperimentBuilder,
+    FilesystemCheckpointer,
     Population,
     ReproductionPolicy,
-    TerminalLoggerMetricsCollector,
+    TerminalController,
     cycle_seeds_initial_population,
     cycle_seeds_initial_population_strategy,
     generational_reproduction,
@@ -31,11 +37,13 @@ from genai_opt.optimizer_engine import (
     random_mutation,
     tournament_selection,
 )
+from genai_opt.optimizer_engine.operation import Operation
 
 DEFAULT_ITERATIONS = 5
 DEFAULT_MUTATION_RATE = 0.35
 DEFAULT_POPULATION_SIZE = 8
 DEFAULT_MODEL = "gpt-4o-mini"
+OPENAI_API_KEY_ENV = "OPENAI_API_KEY"
 
 CULTURAL_THEMES = (
     "hanami (cherry blossom viewing) and mono no aware",
@@ -129,20 +137,39 @@ class HaikuEvaluation(BaseModel):
     )
 
 
+_VOWEL_GROUPS = re.compile(r"[aeiouy]+", re.IGNORECASE)
+_NON_LETTER = re.compile(r"[^a-z']")
+
+
+def _count_word_syllables(word: str) -> int:
+    word = _NON_LETTER.sub("", word.lower())
+    if not word:
+        return 0
+
+    count = len(_VOWEL_GROUPS.findall(word))
+    if word.endswith("e") and count > 1:
+        count -= 1
+    return max(count, 1)
+
+
+def _count_line_syllables(line: str) -> int:
+    return sum(_count_word_syllables(word) for word in line.split())
+
+
 def _is_valid_haiku_structure(invocation: HaikuOutput) -> bool:
     return (
-        len(invocation.line_one.split()) == 5
-        and len(invocation.line_two.split()) == 7
-        and len(invocation.line_three.split()) == 5
+        _count_line_syllables(invocation.line_one) == 5
+        and _count_line_syllables(invocation.line_two) == 7
+        and _count_line_syllables(invocation.line_three) == 5
     )
 
 
 def evaluate_haiku_function(
     llm: BaseChatModel,
-) -> Callable[[HaikuOutput], Awaitable[float]]:
-    async def evaluate(invocation: HaikuOutput) -> float:
+) -> Callable[[HaikuOutput], Awaitable[Operation[float]]]:
+    async def evaluate(invocation: HaikuOutput) -> Operation[float]:
         if not _is_valid_haiku_structure(invocation):
-            return 0.0
+            return Operation(0.0)
 
         haiku = f"{invocation.line_one}\n{invocation.line_two}\n{invocation.line_three}"
         prompt_template = ChatPromptTemplate.from_messages(
@@ -151,9 +178,13 @@ def evaluate_haiku_function(
                 ("human", "{haiku}"),
             ]
         )
-        structured_llm = llm.with_structured_output(HaikuEvaluation)
+        structured_llm = llm.with_structured_output(HaikuEvaluation, include_raw=True)
+        start = time.perf_counter()
         result = await (prompt_template | structured_llm).ainvoke({"haiku": haiku})
-        return float(len(result.cultural_reference) * result.significance)
+        elapsed = time.perf_counter() - start
+        evaluation = extract_parsed(result)
+        score = float(len(evaluation.cultural_reference) * evaluation.significance)
+        return build_operation(score, result, time_seconds=elapsed)
 
     return evaluate
 
@@ -161,8 +192,17 @@ def evaluate_haiku_function(
 def create_llm(
     model: str = DEFAULT_MODEL,
     temperature: float = 0.8,
+    *,
+    api_key: str | None = None,
 ) -> BaseChatModel:
-    return init_chat_model(model, temperature=temperature)
+    load_project_env()
+    resolved_api_key = api_key or os.getenv(OPENAI_API_KEY_ENV)
+    if not resolved_api_key:
+        raise RuntimeError(
+            f"Set {OPENAI_API_KEY_ENV} or pass api_key to create_llm(), "
+            "or pass a configured chat model to run_haiku_experiment()."
+        )
+    return init_chat_model(model, temperature=temperature, api_key=resolved_api_key)
 
 
 def build_haiku_task_message(theme: str | None = None) -> HumanMessage:
@@ -194,6 +234,20 @@ def create_haiku_genome(
     )
 
 
+def haiku_checkpoint_restore_context(
+    llm: BaseChatModel,
+    task_message: HumanMessage,
+) -> dict[str, object]:
+    return {
+        "invocation_schema": HaikuOutput,
+        "invoke_function": invoke_task_message_function(task_message, HaikuOutput),
+        "evaluate_function": evaluate_haiku_function(llm),
+        "mutate_function": mutate_prompt_function(MUTATE_PROMPT, llm),
+        "crossover_function": crossover_prompt_function(CROSSOVER_PROMPT, llm),
+        "llm": llm,
+    }
+
+
 def create_initial_population(
     llm: BaseChatModel,
     population_size: int = DEFAULT_POPULATION_SIZE,
@@ -215,6 +269,7 @@ def build_haiku_experiment(
     mutation_rate: float = DEFAULT_MUTATION_RATE,
     population_size: int = DEFAULT_POPULATION_SIZE,
     shared_task: HumanMessage | None = None,
+    checkpoint_dir: str | Path | None = None,
 ) -> ExperimentBuilder[SimpleSystemPromptPhenotype, HaikuOutput]:
     task_message = shared_task or build_haiku_task_message()
     return ExperimentBuilder(
@@ -229,7 +284,13 @@ def build_haiku_experiment(
             generational_reproduction(population_size),
             tournament_selection,
         ),
-        metrics_collector=TerminalLoggerMetricsCollector(),
+        checkpointer=FilesystemCheckpointer(
+            checkpoint_dir,
+            restore_context=haiku_checkpoint_restore_context(llm, task_message),
+        )
+        if checkpoint_dir
+        else None,
+        experiment_controller=TerminalController(),
     )
 
 
@@ -237,20 +298,27 @@ def run_haiku_experiment(
     llm: BaseChatModel | None = None,
     *,
     model: str = DEFAULT_MODEL,
+    api_key: str | None = None,
     iterations: int = DEFAULT_ITERATIONS,
     mutation_rate: float = DEFAULT_MUTATION_RATE,
     population_size: int = DEFAULT_POPULATION_SIZE,
     shared_task: HumanMessage | None = None,
+    checkpoint_dir: str | Path | None = ".checkpoints/haiku_experiment",
 ) -> Population[SimpleSystemPromptPhenotype, HaikuOutput]:
-    chat_model = llm or create_llm(model=model)
-    engine = build_haiku_experiment(
-        chat_model,
-        iterations=iterations,
-        mutation_rate=mutation_rate,
-        population_size=population_size,
-        shared_task=shared_task,
-    ).build()
-    return engine.run()
+    chat_model = llm or create_llm(model=model, api_key=api_key)
+    engine = (
+        build_haiku_experiment(
+            chat_model,
+            iterations=iterations,
+            mutation_rate=mutation_rate,
+            population_size=population_size,
+            shared_task=shared_task,
+            checkpoint_dir=checkpoint_dir,
+        )
+        .build()
+        .from_checkpoint()
+    )
+    return await engine.run()
 
 
 def format_haiku(haiku: HaikuOutput) -> str:
@@ -271,15 +339,11 @@ def print_best_result(population: Population[SimpleSystemPromptPhenotype, HaikuO
 
 
 def main() -> None:
-    if not os.getenv("OPENAI_API_KEY"):
-        raise RuntimeError(
-            "Set OPENAI_API_KEY before running the haiku experiment, "
-            "or pass a configured chat model to run_haiku_experiment()."
+    population = asyncio.run(
+        run_haiku_experiment(
+            iterations=DEFAULT_ITERATIONS,
+            population_size=DEFAULT_POPULATION_SIZE,
         )
-
-    population = run_haiku_experiment(
-        iterations=DEFAULT_ITERATIONS,
-        population_size=DEFAULT_POPULATION_SIZE,
     )
     print_best_result(population)
 
