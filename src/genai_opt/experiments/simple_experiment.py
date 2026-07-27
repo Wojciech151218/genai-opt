@@ -57,7 +57,7 @@ def build_simple_experiment(
     )
 
 
-async def run_simple_experiment(
+def run_simple_experiment(
     target: float = TARGET_VALUE,
     iterations: int = DEFAULT_ITERATIONS,
     mutation_rate: float = DEFAULT_MUTATION_RATE,
@@ -79,7 +79,7 @@ async def run_simple_experiment(
 
 
 def main() -> None:
-    asyncio.run(run_simple_experiment())
+    run_simple_experiment()
 
 
 if __name__ == "__main__":

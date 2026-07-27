@@ -1,5 +1,3 @@
-import asyncio
-
 from genai_opt.experiments.simple_experiment import run_simple_experiment
 
 

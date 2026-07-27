@@ -52,6 +52,12 @@ ruff check .
 ruff format --check .
 ```
 
+Build documentation locally:
+
+```bash
+mkdocs build
+```
+
 ## License
 
 MIT — see [LICENSE](LICENSE).
