@@ -15,8 +15,9 @@ def iteration_limited_convergence(
     roughly the same number of model calls.
 
     Args:
-        iteration_limit: Iterations to run. ``0`` returns the initial population
-            evaluated but otherwise untouched.
+        iteration_limit: Iterations to run. Convergence is checked before the
+            first phase, so ``0`` returns the initial population without even
+            evaluating it.
 
     Returns:
         A criterion the engine checks at the top of each iteration.
