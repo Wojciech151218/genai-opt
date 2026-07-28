@@ -1,3 +1,11 @@
+"""Live observation and control of a running experiment.
+
+A controller receives every phase and every individual operation as it happens,
+and can pause the run. :class:`TerminalController` is the built-in
+implementation; the key reader backends let it work on POSIX and Windows and
+degrade gracefully when stdin is not a terminal.
+"""
+
 from genai_opt.optimizer_engine.experiment_controller.experiment_controller import (
     ExperimentController,
     NullExperimentController,

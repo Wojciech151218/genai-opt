@@ -1,7 +1,9 @@
+"""The optimization loop itself."""
+
 from __future__ import annotations
 
 import asyncio
-from typing import Generic, Self
+from typing import Any, Generic, Self
 
 from genai_opt.optimizer_engine.checkpointer import Checkpointer, NullCheckpointer
 from genai_opt.optimizer_engine.engine_state import EngineState, IterationPhase
@@ -17,6 +19,33 @@ from genai_opt.optimizer_engine.utils.typevars import Inv, P
 
 
 class Engine(Generic[P, Inv]):
+    """Runs a population through evolutionary iterations until it converges.
+
+    Each iteration is split into the five phases of
+    :class:`~genai_opt.optimizer_engine.engine_state.IterationPhase`, and one
+    phase is executed per call to :meth:`step`. That granularity is what makes a
+    run resumable: a checkpoint is saved after every phase, so an interrupted
+    LLM-backed experiment never has to repeat work it already paid for.
+
+    Call :meth:`run` for the usual blocking loop, or drive :meth:`step`
+    yourself when you want control over scheduling.
+
+    Args:
+        population: The starting population.
+        convergence_criterion: Called with the population and the iteration
+            number at the top of each iteration; returning ``True`` stops the
+            run.
+        mutation_policy: Decides, per offspring genome, whether to mutate it.
+        reproduction_policy: Produces the offspring population from the current
+            one.
+        checkpointer: Persists state after every phase. Defaults to
+            :class:`~genai_opt.optimizer_engine.checkpointer.NullCheckpointer`,
+            which keeps nothing.
+        experiment_controller: Observes phases and operations, and can pause the
+            run. Defaults to
+            :class:`~genai_opt.optimizer_engine.experiment_controller.NullExperimentController`.
+    """
+
     def __init__(
         self,
         population: Population[P, Inv],
@@ -36,6 +65,7 @@ class Engine(Generic[P, Inv]):
 
     @property
     def population(self) -> Population[P, Inv]:
+        """The current generation."""
         return self._state.population
 
     @population.setter
@@ -44,6 +74,12 @@ class Engine(Generic[P, Inv]):
 
     @property
     def offspring_population(self) -> Population[P, Inv]:
+        """The candidate next generation.
+
+        Raises:
+            RuntimeError: If accessed before the reproduce phase has run, or
+                after the offspring have replaced the current population.
+        """
         if self._state.offspring_population is None:
             raise RuntimeError("Offspring population is unavailable before reproduction")
         return self._state.offspring_population
@@ -54,6 +90,7 @@ class Engine(Generic[P, Inv]):
 
     @property
     def iteration(self) -> int:
+        """How many complete iterations have finished."""
         return self._state.iteration
 
     @iteration.setter
@@ -95,9 +132,25 @@ class Engine(Generic[P, Inv]):
         self._state.offspring_population = None
 
     def get_population(self) -> Population[P, Inv]:
+        """Return the current generation."""
         return self.population
 
-    def from_checkpoint(self, **context) -> Self:
+    def from_checkpoint(self, **context: Any) -> Self:
+        """Restore saved state from the configured checkpointer, if any exists.
+
+        Safe to call on a fresh run: when no checkpoint is found the engine
+        keeps the population it was built with, so the usual
+        ``builder.build().from_checkpoint()`` chain works either way.
+
+        Args:
+            **context: Passed through to the checkpointer, which forwards it to
+                each genome's deserializer. Genomes that hold non-serializable
+                collaborators, such as a chat model or an evaluation function,
+                are rebuilt from these values.
+
+        Returns:
+            This engine, to allow chaining.
+        """
         state = self.checkpointer.load(**context)
         if state is not None:
             self._state = state
@@ -130,7 +183,22 @@ class Engine(Generic[P, Inv]):
         self.checkpointer.save_checkpoint(self._state, metadata)
 
     async def step(self) -> IterationMetadata[P, Inv]:
-        """Execute and persist one phase of the current iteration."""
+        """Execute and persist one phase of the current iteration.
+
+        Blocks while the experiment controller reports a paused run, advances
+        the stored phase, notifies the controller, then checkpoints. Because the
+        stored phase is always the *next* one to execute, a checkpoint written
+        here can be resumed without repeating the phase that produced it.
+
+        Returns:
+            Metadata for the phase that just ran, including its operations and
+            the fitness spread of the population it touched.
+
+        Raises:
+            RuntimeError: If the stored phase is not a recognized
+                :class:`~genai_opt.optimizer_engine.engine_state.IterationPhase`,
+                which normally means a checkpoint from an incompatible version.
+        """
         await self._wait_if_paused()
         phase = self._state.phase
 
@@ -167,6 +235,15 @@ class Engine(Generic[P, Inv]):
         return metadata
 
     def run(self) -> Population[P, Inv]:
+        """Iterate until the convergence criterion is satisfied.
+
+        This is the synchronous entry point and it owns the event loop, so it
+        cannot be called from inside one. Await :meth:`step` in a loop instead
+        if you already have a running loop.
+
+        Returns:
+            The final population, with every genome evaluated.
+        """
         return asyncio.run(self._run_async())
 
     async def _run_async(self) -> Population[P, Inv]:

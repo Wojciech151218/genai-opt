@@ -1,3 +1,10 @@
+"""A credential-free example experiment that evolves a float toward a target.
+
+The quickest way to watch the engine work, and the example the tests exercise.
+Run it as a module, ``python -m genai_opt.experiments.simple_experiment``, or call
+:func:`run_simple_experiment`.
+"""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -26,6 +33,15 @@ def create_initial_population(
     target: float = TARGET_VALUE,
     population_size: int = DEFAULT_POPULATION_SIZE,
 ) -> Population[float, float]:
+    """Build a generation of genomes with values drawn uniformly from 0 to 100.
+
+    Args:
+        target: The value genomes are optimized toward.
+        population_size: How many genomes to create.
+
+    Returns:
+        The starting population.
+    """
     population = Population()
     for _ in range(population_size):
         value = uniform(0.0, 100.0)
@@ -40,6 +56,21 @@ def build_simple_experiment(
     population_size: int = DEFAULT_POPULATION_SIZE,
     checkpoint_dir: str | Path | None = None,
 ) -> ExperimentBuilder:
+    """Assemble the experiment without running it.
+
+    Use this when you want to inspect or adjust the configuration, or to drive
+    ``Engine.step()`` yourself.
+
+    Args:
+        target: The value genomes are optimized toward.
+        iterations: How many iterations to run before stopping.
+        mutation_rate: Probability that a given offspring is mutated.
+        population_size: Genomes per generation.
+        checkpoint_dir: Where to write checkpoints. ``None`` keeps nothing.
+
+    Returns:
+        The configured builder.
+    """
     return ExperimentBuilder(
         inital_population_strategy=lambda: create_initial_population(
             target=target,
@@ -63,6 +94,24 @@ def run_simple_experiment(
     population_size: int = DEFAULT_POPULATION_SIZE,
     checkpoint_dir: str | Path | None = ".checkpoints/simple_experiment",
 ) -> Population[float, float]:
+    """Run the experiment to completion and return the final population.
+
+    Resumes from ``checkpoint_dir`` when a checkpoint is already there, so
+    calling this twice with the default continues the earlier run rather than
+    starting over. Pass ``checkpoint_dir=None`` for a self-contained run.
+
+    Args:
+        target: The value genomes are optimized toward.
+        iterations: How many iterations to run before stopping.
+        mutation_rate: Probability that a given offspring is mutated.
+        population_size: Genomes per generation.
+        checkpoint_dir: Where to read and write checkpoints. ``None`` disables
+            them.
+
+    Returns:
+        The final population, with every genome evaluated. Pick the winner with
+        ``max(population.get_genome_fitness(), key=lambda item: item[1])``.
+    """
     engine = (
         build_simple_experiment(
             target=target,
@@ -78,6 +127,7 @@ def run_simple_experiment(
 
 
 def main() -> None:
+    """Run the experiment with default settings, for ``python -m`` use."""
     run_simple_experiment()
 
 

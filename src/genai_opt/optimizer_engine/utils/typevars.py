@@ -1,3 +1,5 @@
+"""The two type variables every generic engine class is parameterized by."""
+
 from __future__ import annotations
 
 from typing import TypeVar

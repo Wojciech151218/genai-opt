@@ -1,30 +1,49 @@
 # genai-opt
 
-`genai-opt` is a Python library designed for building and running optimization experiments. The current codebase focuses on a generic evolutionary optimizer
-with asynchronous genome evaluation, configurable reproduction, mutation, convergence criteria, and metrics collection.
+`genai-opt` is a Python library for building and running evolutionary
+optimization experiments, including ones whose candidates are LLM prompts.
 
-## Current Scope
+The engine is generic: you describe a candidate as a `Genome` with four
+operations — invoke, evaluate, mutate and crossover — and the engine handles
+selection, iteration, concurrency and persistence.
 
-- Generic `Genome` abstraction for phenotype-based optimization.
-- `Population` container with asynchronous evaluation support.
-- `Engine` loop for evaluate, reproduce, mutate, evaluate offspring, replace,
-  and collect metrics.
-- Reproduction policies with tournament, roulette wheel, and rank selection.
-- Mutation policy based on a probability threshold.
-- Iteration-limited convergence criterion.
-- A simple `FloatGenome` experiment that optimizes a float toward a target.
+## What it provides
 
-## Project Status
+- A generic `Genome` abstraction, and a `Population` that invokes and evaluates
+  its members concurrently, streaming results as they finish.
+- An `Engine` loop split into [five resumable phases](phases.md), so an
+  interrupted run continues rather than repeating paid work.
+- [Checkpointing](checkpoints.md) to disk after every phase, with a restore
+  context for collaborators that cannot be serialized.
+- Live [experiment control](api.md#experiment-control): every phase and operation
+  is reported as it happens, and a run can be paused. Works on POSIX and Windows.
+- Reproduction with tournament, roulette wheel and rank selection; probability
+  based mutation; iteration-limited convergence.
+- Token, duration and cost accounting on every operation, aggregated per phase.
+- A ready-made adapter for evolving the system prompt of a chat model.
+- Two example experiments: a credential-free float optimizer, and a haiku
+  prompt optimizer that calls a real LLM.
 
-The project is in an early `0.1.0` stage. Public APIs may still evolve, but
-changes should follow the workflow described in the development guides:
-branches, focused commits, tests, review, and documentation updates.
-
-## Quick Commands
+## Quick start
 
 ```bash
 pip install -e ".[dev]"
 pytest
-ruff check .
-mkdocs serve
 ```
+
+```python
+from genai_opt.experiments.simple_experiment import run_simple_experiment
+
+population = run_simple_experiment(iterations=10, checkpoint_dir=None)
+best_genome, best_fitness = max(population.get_genome_fitness(), key=lambda item: item[1])
+print(best_genome.phenotype, best_fitness)
+```
+
+See [Getting Started](getting-started.md) for a fuller walkthrough, including
+building an experiment from parts rather than calling a canned runner.
+
+## Requirements and status
+
+Python 3.11 or newer, on Linux, macOS or Windows.
+
+From 1.0.0 the public API is stable under [Semantic Versioning](api-stability.md).

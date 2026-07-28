@@ -1,33 +1,43 @@
 # genai-opt
 ![Tests](https://github.com/Wojciech151218/genai-opt/actions/workflows/tests.yml/badge.svg)
 
-A Python library for GenAI optimization.
+A Python library for GenAI optimization: an evolutionary engine for optimizing
+anything you can score, including LLM prompts.
+
+Requires Python 3.11 or newer, on Linux, macOS or Windows.
 
 ## Installation
 
 ```bash
-# Clone the repository
+pip install genai-opt
+```
+
+### From a checkout
+
+```bash
 git clone https://github.com/Wojciech151218/genai-opt.git
 cd genai-opt
 
-# Create and activate a virtual environment (Python >= 3.13)
-py -3.13 -m venv .venv
-.venv\Scripts\Activate.ps1  # Windows
+python3 -m venv .venv
+source .venv/bin/activate        # Linux and macOS
+# .venv\Scripts\Activate.ps1     # Windows PowerShell
 
-# Install the package with development dependencies
 pip install -e ".[dev]"
-
-# Install pre-commit hooks
 pre-commit install
 ```
 
 ## Usage
 
 ```python
-import genai_opt
+from genai_opt.experiments.simple_experiment import run_simple_experiment
 
-print(genai_opt.__version__)
+population = run_simple_experiment(iterations=10, checkpoint_dir=None)
+best_genome, best_fitness = max(population.get_genome_fitness(), key=lambda item: item[1])
+print(best_genome.phenotype, best_fitness)
 ```
+
+See the [documentation](docs/index.md) for building experiments from parts,
+writing your own genome, resuming from checkpoints, and optimizing LLM prompts.
 
 ## Development
 

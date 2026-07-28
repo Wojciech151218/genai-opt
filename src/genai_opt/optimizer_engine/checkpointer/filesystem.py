@@ -1,3 +1,5 @@
+"""A checkpointer that stores engine state as JSON files on disk."""
+
 from __future__ import annotations
 
 import json
@@ -18,6 +20,16 @@ class FilesystemCheckpointer(Checkpointer[P, Inv]):
     Genomes are stored as JSON (``checkpoint.json``) via each genome's
     ``to_json`` / ``from_json`` methods. A human-readable JSON summary
     (``checkpoint_meta.json``) records iteration stats and operation metadata.
+
+    Only the latest checkpoint is kept: each save replaces the previous one, via
+    a temporary file and an atomic rename, so an interrupted write cannot leave a
+    corrupt checkpoint behind.
+
+    Args:
+        directory: Where the two files live. Created on first save.
+        restore_context: Collaborators needed to rebuild genomes, merged with
+            (and overridden by) whatever is passed to :meth:`load`. Supply the
+            chat model and operation functions here for LLM-backed genomes.
     """
 
     def __init__(
@@ -36,6 +48,13 @@ class FilesystemCheckpointer(Checkpointer[P, Inv]):
         state: EngineState[P, Inv],
         iteration_metadata: IterationMetadata[P, Inv],
     ) -> None:
+        """Write state and a summary, replacing any previous checkpoint.
+
+        Args:
+            state: The state to persist.
+            iteration_metadata: Statistics for the finished phase, written to the
+                companion summary file.
+        """
         self.directory.mkdir(parents=True, exist_ok=True)
 
         payload = {
@@ -59,6 +78,22 @@ class FilesystemCheckpointer(Checkpointer[P, Inv]):
         temp_metadata.replace(self._metadata_path)
 
     def load(self, **context: Any) -> EngineState[P, Inv] | None:
+        """Read the checkpoint from disk, if one exists.
+
+        Args:
+            **context: Restore context, merged over ``restore_context`` given to
+                the constructor.
+
+        Returns:
+            The restored state, or ``None`` when no checkpoint file is present.
+
+        Raises:
+            ValueError: If the file exists but is not a checkpoint this version
+                understands, whether the payload shape, the offspring population
+                or the phase name. Malformed checkpoints fail loudly rather than
+                silently restarting a paid run from scratch.
+            json.JSONDecodeError: If the file is not valid JSON.
+        """
         if not self._checkpoint_path.exists():
             return None
 
