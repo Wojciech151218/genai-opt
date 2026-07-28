@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, TypeVar
 
 from langchain.chat_models import init_chat_model
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -15,6 +15,8 @@ from pydantic import BaseModel
 from genai_opt.adapters.simple_system_prompt_genome.types import SystemPrompt
 from genai_opt.env import load_project_env
 from genai_opt.optimizer_engine.operation import Operation
+
+V = TypeVar("V")
 
 
 def render_system_prompt(prompt: SystemPrompt) -> str:
@@ -67,7 +69,7 @@ def extract_parsed(result: Any) -> Any:
     return result
 
 
-def build_operation[V](
+def build_operation(
     value: V,
     result: Any,
     *,
