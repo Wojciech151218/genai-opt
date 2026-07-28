@@ -5,11 +5,38 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "genai-opt"
 dynamic = ["version"]
-description = "A Python library for GenAI optimization."
+description = "Evolutionary optimization for GenAI systems, including LLM prompts."
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.11"
-authors = []
+# Collective, matching LICENSE. Naming individuals here would either publish
+# personal addresses or, for a contributor without a public one, single someone
+# out as the sole Author. Per-person credit lives in the commit history.
+authors = [{ name = "genai-opt contributors" }]
+keywords = [
+    "evolutionary-algorithm",
+    "genetic-algorithm",
+    "genai",
+    "llm",
+    "optimization",
+    "prompt-engineering",
+    "prompt-optimization",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
 dependencies = [
     "langchain>=0.3",
     "langchain-core>=0.3",
@@ -17,6 +44,15 @@ dependencies = [
     "langgraph>=0.2",
     "python-dotenv>=1.2.2",
 ]
+
+[project.urls]
+Homepage = "https://github.com/Wojciech151218/genai-opt"
+Source = "https://github.com/Wojciech151218/genai-opt"
+# The docs are built with mkdocs but not yet hosted, so this points at the
+# sources, which GitHub renders. Repoint it once a site is published.
+Documentation = "https://github.com/Wojciech151218/genai-opt/tree/main/docs"
+Issues = "https://github.com/Wojciech151218/genai-opt/issues"
+Changelog = "https://github.com/Wojciech151218/genai-opt/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
