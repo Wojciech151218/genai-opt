@@ -33,6 +33,7 @@ class Engine(Generic[P, Inv]):
         self.mutation_policy = mutation_policy
         self.checkpointer = checkpointer or NullCheckpointer()
         self.experiment_controller = experiment_controller or NullExperimentController()
+
     @property
     def population(self) -> Population[P, Inv]:
         return self._state.population
@@ -167,9 +168,8 @@ class Engine(Generic[P, Inv]):
 
     async def run(self) -> Population[P, Inv]:
         await self.experiment_controller.setup()
-        while (
-            self._state.phase is not IterationPhase.EVALUATE_POPULATION
-            or not self.convergence_criterion(self.population, self.iteration)
+        while self._state.phase is not IterationPhase.EVALUATE_POPULATION or not self.convergence_criterion(
+            self.population, self.iteration
         ):
             await self.step()
         return self.population

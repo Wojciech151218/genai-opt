@@ -1,3 +1,5 @@
+import asyncio
+
 from genai_opt.experiments.simple_experiment import (
     TARGET_VALUE,
     run_simple_experiment,

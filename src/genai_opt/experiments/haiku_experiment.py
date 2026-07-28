@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import re
 import time
@@ -294,7 +295,7 @@ def build_haiku_experiment(
     )
 
 
-def run_haiku_experiment(
+async def run_haiku_experiment(
     llm: BaseChatModel | None = None,
     *,
     model: str = DEFAULT_MODEL,
