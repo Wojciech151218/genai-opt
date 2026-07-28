@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from typing import Any, TypeVar
+from typing import Any, TypeAlias
 
 from genai_opt.optimizer_engine.genome import Genome as Gen
 from genai_opt.optimizer_engine.iteration_metadata import (
@@ -12,25 +12,29 @@ from genai_opt.optimizer_engine.metrics_collector.metrics_collector import (
 )
 from genai_opt.optimizer_engine.operation import Operation as Op
 from genai_opt.optimizer_engine.population import Population as Pop
-
-P = TypeVar("PHENOTYPE")
-Inv = TypeVar("INVOCATION")
-
-type ParentPair[P, Inv] = tuple[Gen[P, Inv], Gen[P, Inv]]
+from genai_opt.optimizer_engine.utils.typevars import Inv, P
 
 
 class Types:
-    type Genome = Gen[P, Inv]
-    type IterationMetadata = IM[P, Inv]
-    type Operation = Op[Any]
-    type Population = Pop[P, Inv]
-    type ConvergenceCriterion = Callable[[Population[P, Inv], int], bool]
-    type InitialPopulationStrategy = Callable[[Any, ...], Pop[P, Inv]]
-    type MetricsCollector = MC[P, Inv]
-    type MutationPolicy = Callable[[Gen[P, Inv]], bool]
-    type ParentSelection = Callable[[Pop[P, Inv]], ParentPair[P, Inv]]
-    type ReproduceFn = Callable[
+    """Short aliases for the engine's recurring generic types.
+
+    Imported as ``T`` throughout the engine so signatures stay readable, for
+    example ``def random_mutation(threshold: float) -> T.MutationPolicy``.
+    """
+
+    Genome: TypeAlias = Gen[P, Inv]
+    IterationMetadata: TypeAlias = IM[P, Inv]
+    MetricsCollector: TypeAlias = MC[P, Inv]
+    Operation: TypeAlias = Op[Any]
+    Population: TypeAlias = Pop[P, Inv]
+    ParentPair: TypeAlias = tuple[Gen[P, Inv], Gen[P, Inv]]
+
+    ConvergenceCriterion: TypeAlias = Callable[[Pop[P, Inv], int], bool]
+    InitialPopulationStrategy: TypeAlias = Callable[..., Pop[P, Inv]]
+    MutationPolicy: TypeAlias = Callable[[Gen[P, Inv]], bool]
+    ParentSelection: TypeAlias = Callable[[Pop[P, Inv]], ParentPair]
+    ReproduceFn: TypeAlias = Callable[
         [Pop[P, Inv]],
         tuple[Pop[P, Inv], list[Op[Any]]] | Awaitable[tuple[Pop[P, Inv], list[Op[Any]]]],
     ]
-    type ReproductionStrategy = Callable[[ParentSelection], ReproduceFn]
+    ReproductionStrategy: TypeAlias = Callable[[ParentSelection], ReproduceFn]
