@@ -1,3 +1,5 @@
+"""Short aliases for the engine's generic types."""
+
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable

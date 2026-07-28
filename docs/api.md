@@ -1,100 +1,87 @@
 # API Reference
 
-This page documents the current public API exposed by the package. The project
-is still early, so the API should be treated as evolving until a stable release.
+This page is generated from the docstrings in the source, so it cannot drift
+away from the code. See [API Stability](api-stability.md) for what is covered by
+the compatibility promise.
 
-## Package Version
+## Package
 
-```python
-import genai_opt
-
-print(genai_opt.__version__)
-```
-
-## Genome
-
-`Genome[P, Inv]` is the abstract base for optimization candidates.
-
-Each concrete genome stores a `phenotype` and must implement:
-
-- `invoke()`
-- `evaluate()`
-- `mutate()`
-- `crossover(other)`
-
-Accessing `genome.evaluation` before evaluation raises `ValueError`.
-
-## Population
-
-`Population[P, Inv]` stores genomes and provides helper operations:
-
-- `add_genome(genome)`
-- `remove_genome(index)`
-- `evaluate_population()`
-- `reset_evaluations()`
-- `get_genome_and_fitness(index)`
-- `get_genome_fitness()`
-- `get_genome_count()`
-- `merge(other)`
-
-Population evaluation is asynchronous and evaluates all genomes concurrently.
+::: genai_opt
 
 ## Engine
 
-`Engine` coordinates the optimization loop.
+::: genai_opt.optimizer_engine.engine.Engine
 
-The loop repeats until the convergence criterion returns `True`:
+::: genai_opt.optimizer_engine.experiment_builder.ExperimentBuilder
 
-1. Evaluate the current population.
-2. Create offspring through the reproduction policy.
-3. Mutate offspring according to the mutation policy.
-4. Evaluate offspring.
-5. Replace the current population with offspring.
-6. Collect metrics.
+::: genai_opt.optimizer_engine.engine_state
 
-## ExperimentBuilder
+## Candidates
 
-`ExperimentBuilder` wires together:
+::: genai_opt.optimizer_engine.genome.Genome
 
-- initial population strategy
-- convergence criterion
-- mutation policy
-- reproduction policy
-- metrics collector
+::: genai_opt.optimizer_engine.population.Population
 
-Calling `build()` returns a configured `Engine`.
+::: genai_opt.optimizer_engine.operation
+
+## Iteration Metadata
+
+::: genai_opt.optimizer_engine.iteration_metadata
 
 ## Policies and Criteria
 
-Available convergence criterion:
+::: genai_opt.optimizer_engine.convergence_criterion.convergence_criterion
 
-- `iteration_limited_convergence(iteration_limit)`
+::: genai_opt.optimizer_engine.mutation_policy.mutation_policy
 
-Available mutation policy:
+::: genai_opt.optimizer_engine.reproduction_policy.reproduction_policy
 
-- `random_mutation(threshold)`
+::: genai_opt.optimizer_engine.reproduction_policy.reproduction_strategy
 
-Available parent selection strategies:
+::: genai_opt.optimizer_engine.reproduction_policy.parent_selection
 
-- `tournament_selection(population)`
-- `roulette_wheel_selection(population)`
-- `rank_selection(population)`
+::: genai_opt.optimizer_engine.initial_population.initial_population_strategy
 
-Available reproduction helper:
+## Checkpointing
 
-- `generational_reproduction(population_size)`
+::: genai_opt.optimizer_engine.checkpointer.checkpointer
+
+::: genai_opt.optimizer_engine.checkpointer.filesystem.FilesystemCheckpointer
+
+::: genai_opt.optimizer_engine.serialization
+
+## Experiment Control
+
+::: genai_opt.optimizer_engine.experiment_controller.experiment_controller
+
+::: genai_opt.optimizer_engine.experiment_controller.terminal_controller.TerminalController
+
+::: genai_opt.optimizer_engine.experiment_controller.key_reader
 
 ## Metrics
 
-`TerminalLoggerMetricsCollector` prints iteration number, population size, best
-fitness, worst fitness, and mean fitness.
+::: genai_opt.optimizer_engine.metrics_collector.metrics_collector.MetricsCollector
 
-## Example Genome
+::: genai_opt.optimizer_engine.metrics_collector.terminal_logger.TerminalLoggerMetricsCollector
 
-`FloatGenome` optimizes a single float toward a target value.
+## System Prompt Adapter
 
-Fitness is calculated as:
+::: genai_opt.adapters.simple_system_prompt_genome.genome.SimpleSystemPromptGenome
 
-```python
-100.0 - abs(phenotype - target)
-```
+::: genai_opt.adapters.simple_system_prompt_genome.types
+
+::: genai_opt.adapters.simple_system_prompt_genome.functions
+
+::: genai_opt.adapters.simple_system_prompt_genome.helpers
+
+## Example Experiments
+
+::: genai_opt.experiments.float_genome.FloatGenome
+
+::: genai_opt.experiments.simple_experiment
+
+::: genai_opt.experiments.haiku_experiment
+
+## Environment
+
+::: genai_opt.env

@@ -19,7 +19,14 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "ruff>=0.15.20", "pytest-cov>=4.0", "mkdocs>=1.6", "pre-commit"]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.15.20",
+    "pytest-cov>=4.0",
+    "mkdocs>=1.6",
+    "mkdocstrings[python]>=0.26",
+    "pre-commit",
+]
 
 [tool.setuptools.dynamic]
 version = { attr = "genai_opt.__version__" }
@@ -47,13 +54,22 @@ select = [
     "N",   # pep8 naming conventions
     "B",   # bugbear (common logic mistakes)
     "C4",  # flake8-comprehensions (simplify list/dict expressions)
+    "D",   # pydocstyle (public API must be documented in code)
     "UP",  # pyupgrade (outdated syntax)
     "RUF", # ruff-specific rules
 ]
 ignore = [
     "N817",
     "UP046",
+    "D105", # dunder methods are self-describing
+    "D107", # google style documents constructor arguments on the class
 ]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]
 
 [tool.coverage.run]
 source = ["src"]

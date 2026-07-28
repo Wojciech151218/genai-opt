@@ -1,3 +1,5 @@
+"""Reading single keypresses on whatever platform the run happens to be on."""
+
 from __future__ import annotations
 
 import sys
@@ -51,11 +53,15 @@ class NullKeyReader(KeyReader):
 
     @property
     def can_read_keys(self) -> bool:
+        """Always ``False``: this backend can never report a keypress."""
         return False
 
     def read_key(self) -> str | None:
-        # Sleeps for the poll interval so a caller that polls anyway cannot
-        # turn this into a busy loop.
+        """Return ``None`` after sleeping for the poll interval.
+
+        The sleep is what stops a caller that polls anyway from turning this
+        into a busy loop.
+        """
         time.sleep(self.poll_interval)
         return None
 
@@ -73,6 +79,7 @@ class PosixKeyReader(KeyReader):
         self._original_mode: list | None = None
 
     def open(self) -> None:
+        """Enter cbreak mode, remembering the previous terminal settings."""
         import termios
         import tty
 
@@ -81,6 +88,7 @@ class PosixKeyReader(KeyReader):
         tty.setcbreak(self._fd)
 
     def read_key(self) -> str | None:
+        """Wait up to the poll interval for one character on stdin."""
         import select
 
         ready, _, _ = select.select([sys.stdin], [], [], self.poll_interval)
@@ -89,6 +97,7 @@ class PosixKeyReader(KeyReader):
         return sys.stdin.read(1)
 
     def close(self) -> None:
+        """Restore the terminal settings captured by :meth:`open`."""
         if self._fd is None or self._original_mode is None:
             return
 
@@ -110,6 +119,7 @@ class WindowsKeyReader(KeyReader):
     _SLICE_SECONDS = 0.01
 
     def read_key(self) -> str | None:
+        """Poll the console for up to the poll interval and return any keypress."""
         import msvcrt
 
         deadline = time.monotonic() + self.poll_interval

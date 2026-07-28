@@ -1,3 +1,12 @@
+"""An adapter that evolves the system prompt of a chat model.
+
+The phenotype is a system prompt paired with the model that runs it. Invoking a
+genome sends a fixed task message under that prompt and parses the reply into a
+schema you choose; mutation and crossover ask an LLM to rewrite prompts. Compose
+an experiment from the ``*_function`` factories here rather than subclassing
+:class:`SimpleSystemPromptGenome`.
+"""
+
 from genai_opt.adapters.simple_system_prompt_genome.functions import (
     crossover_prompt_function,
     evaluate_prompt_function,

@@ -1,3 +1,5 @@
+"""A terminal frontend that logs operations and supports pausing a run."""
+
 from __future__ import annotations
 
 import asyncio
@@ -52,6 +54,7 @@ class TerminalController(ExperimentController):
         self._reader_open = False
 
     async def setup(self) -> None:
+        """Start watching for the pause key, if a usable reader is available."""
         if not self.listen_for_pause:
             return
 
@@ -60,6 +63,10 @@ class TerminalController(ExperimentController):
         self._listener_task = asyncio.create_task(self._listen_for_pause_key(self._key_reader))
 
     async def teardown(self) -> None:
+        """Stop the listener and hand the terminal back as it was found.
+
+        Safe to call whether or not :meth:`setup` ran.
+        """
         if self._listener_task is not None:
             self._listener_task.cancel()
             with contextlib.suppress(asyncio.CancelledError):
@@ -71,10 +78,12 @@ class TerminalController(ExperimentController):
             self._reader_open = False
 
     async def control_iteration(self, iteration_metadata: IterationMetadata[P, Inv]) -> None:
+        """Print one summary line for a finished phase."""
         phase = iteration_metadata.phase.value if iteration_metadata.phase is not None else "unknown"
         self._log_phase_summary(phase, iteration_metadata)
 
     async def control_operation(self, iteration: int, phase: IterationPhase, operation: Operation) -> None:
+        """Print one line for a completed operation."""
         self._log_operation(operation)
 
     async def _listen_for_pause_key(self, reader: KeyReader) -> None:

@@ -1,3 +1,5 @@
+"""Records of individual genome operations, including their LLM usage."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -7,10 +9,22 @@ from uuid import UUID, uuid4
 V = TypeVar("V")
 
 OperationKind = Literal["crossover", "mutation", "invoke", "evaluate", "unknown"]
+"""Which genome operation produced a value."""
 
 
 @dataclass
 class LLMMetadata:
+    """Token counts, model name and cost for a single model call.
+
+    Attributes:
+        model: Model that served the call, when the provider reports it.
+        cost: Cost in currency units. Nothing computes this automatically; set
+            it yourself if you want cost totals.
+        time_seconds: How long the model call took.
+        tokens_in: Prompt tokens.
+        tokens_out: Completion tokens.
+    """
+
     model: str | None = None
     cost: float | None = None
     time_seconds: float | None = None
@@ -19,6 +33,7 @@ class LLMMetadata:
 
     @property
     def total_tokens(self) -> int:
+        """Prompt plus completion tokens."""
         return self.tokens_in + self.tokens_out
 
     @classmethod
@@ -36,6 +51,14 @@ class LLMMetadata:
         the provider-specific ``response_metadata`` payloads: ``token_usage``
         with ``prompt_tokens``/``completion_tokens`` (OpenAI) or ``usage`` with
         ``input_tokens``/``output_tokens`` (Anthropic).
+
+        Args:
+            message: The ``AIMessage`` returned by the model.
+            time_seconds: How long the call took.
+            cost: Cost of the call, if you track it.
+
+        Returns:
+            The extracted metadata.
 
         Raises:
             ValueError: If no recognizable token usage shape is found.
@@ -88,6 +111,25 @@ class Operation(Generic[V]):
 
     Carries the operation's value (invocation result, fitness, child genome),
     a random identifier, timing, and optional LLM usage metadata.
+
+    The identifier lets a frontend follow one operation from the moment a
+    controller is told about it through to the checkpoint metadata, and it is
+    preserved when a phenotype operation is rewrapped as a genome operation.
+
+    Args:
+        value: What the operation produced.
+        kind: Which operation this was. The engine overwrites this, so genome
+            authors rarely set it.
+        duration_seconds: Measured duration. The engine fills this in when it is
+            left at zero.
+        llm_metadata: Usage metadata for the underlying model call.
+        model: Convenience field, used to build ``llm_metadata`` when it is not
+            given directly.
+        cost: Convenience field, as ``model``.
+        time_seconds: Convenience field, as ``model``.
+        tokens_in: Convenience field, as ``model``.
+        tokens_out: Convenience field, as ``model``.
+        id: Existing identifier to keep, instead of generating a new one.
     """
 
     def __init__(
@@ -124,24 +166,30 @@ class Operation(Generic[V]):
 
     @property
     def tokens(self) -> int:
+        """Total tokens used, or ``0`` for operations with no model call."""
         return self.llm_metadata.total_tokens if self.llm_metadata is not None else 0
 
     @property
     def cost(self) -> float:
+        """Cost of this operation, or ``0.0`` when none was recorded."""
         if self.llm_metadata is None or self.llm_metadata.cost is None:
             return 0.0
         return self.llm_metadata.cost
 
     def set_kind(self, kind: OperationKind) -> None:
+        """Label which genome operation produced this value."""
         self.kind = kind
 
     def set_value(self, value: V) -> None:
+        """Replace the produced value."""
         self.value = value
 
     def set_duration(self, duration_seconds: float) -> None:
+        """Record how long the operation took."""
         self.duration_seconds = duration_seconds
 
     def set_llm_metadata(self, llm_metadata: LLMMetadata) -> None:
+        """Attach usage metadata for the underlying model call."""
         self.llm_metadata = llm_metadata
 
     @classmethod
@@ -155,6 +203,22 @@ class Operation(Generic[V]):
         time_seconds: float | None = None,
         cost: float | None = None,
     ) -> Operation[V]:
+        """Build an operation with usage metadata read from a LangChain message.
+
+        Args:
+            value: What the operation produced.
+            message: The ``AIMessage`` that produced it.
+            kind: Which operation this was.
+            duration_seconds: Measured duration.
+            time_seconds: Duration of the model call itself.
+            cost: Cost of the call, if you track it.
+
+        Returns:
+            The operation, with token counts and model name filled in.
+
+        Raises:
+            ValueError: If the message carries no recognizable token usage.
+        """
         return cls(
             value,
             kind=kind,

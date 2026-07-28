@@ -1,3 +1,11 @@
+"""The evolutionary optimization engine and everything needed to configure it.
+
+Build an experiment with :class:`ExperimentBuilder`, which wires an initial
+population strategy, a convergence criterion, a mutation policy and a
+reproduction policy into an :class:`Engine`, optionally alongside a
+:class:`Checkpointer` and an :class:`ExperimentController`.
+"""
+
 from genai_opt.optimizer_engine.checkpointer import (
     Checkpointer,
     FilesystemCheckpointer,
