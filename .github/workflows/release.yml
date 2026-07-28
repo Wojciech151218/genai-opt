@@ -3,34 +3,134 @@ name: Release
 on:
   push:
     tags:
-      - "v*.*.*"
+      # Strict: only real releases. A typo like v1.0 or a v1.0.0-rc1 tag will not
+      # start a publish, since PyPI uploads cannot be undone.
+      - "v[0-9]+.[0-9]+.[0-9]+"
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
-  release:
+  verify-version:
+    name: Verify the tag matches the source
     runs-on: ubuntu-latest
-
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Compare the tag against __version__
+        id: resolve
+        # The distribution version is derived from genai_opt.__version__, so this
+        # is really a check that the tag was not created against the wrong commit
+        # or before the version bump landed.
+        run: |
+          set -euo pipefail
+          tag_version="${GITHUB_REF_NAME#v}"
+          source_version=$(grep -oP '__version__ = "\K[^"]+' src/genai_opt/__init__.py)
+
+          echo "tag=${tag_version} source=${source_version}"
+          if [ "${tag_version}" != "${source_version}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match __version__ ${source_version}. Bump the version, or retag the right commit."
+            exit 1
+          fi
+
+          echo "version=${tag_version}" >> "$GITHUB_OUTPUT"
+          echo "Releasing version ${tag_version}" >> "$GITHUB_STEP_SUMMARY"
+
+  ci:
+    name: CI
+    needs: verify-version
+    # The same workflow that guards pull requests, reused rather than copied, so
+    # a release can never be held to a weaker standard than a PR.
+    uses: ./.github/workflows/tests.yml
+
+  build:
+    name: Build the distribution
+    needs: [verify-version, ci]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.13"
 
-      - name: Install build tools
+      - name: Install build tooling
         run: |
           python -m pip install --upgrade pip
-          pip install build
+          pip install build twine
 
-      - name: Build package
+      - name: Build sdist and wheel
         run: python -m build
 
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+      - name: Check the distribution metadata
+        run: twine check --strict dist/*
+
+      - name: Verify the built artifacts carry the tagged version
+        # Closes the loop the other way round: the version gate compared the tag
+        # to the source, this compares it to what will actually be uploaded.
+        run: |
+          set -euo pipefail
+          expected="${{ needs.verify-version.outputs.version }}"
+          ls -l dist/
+          test -f "dist/genai_opt-${expected}-py3-none-any.whl"
+          test -f "dist/genai_opt-${expected}.tar.gz"
+          echo "Artifacts match version ${expected}"
+
+      - name: Upload the distribution
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-dist
+          path: dist/
+          if-no-files-found: error
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: [verify-version, build]
+    runs-on: ubuntu-latest
+    # Trusted Publishing: PyPI verifies this workflow's OIDC identity, so there
+    # is no long-lived API token anywhere in the repository or its secrets.
+    environment:
+      name: pypi
+      url: https://pypi.org/project/genai-opt/${{ needs.verify-version.outputs.version }}
+    permissions:
+      id-token: write
+    steps:
+      - name: Download the distribution
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-dist
+          path: dist/
+
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247 # v1.14.1
+
+  github-release:
+    name: Create the GitHub release
+    # Deliberately after the upload: a release announcing a version nobody can
+    # pip install is worse than no release at all.
+    needs: [verify-version, publish-pypi]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download the distribution
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-dist
+          path: dist/
+
+      - name: Create the release
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           files: dist/*
           generate_release_notes: true
+          body: |
+            Install with `pip install genai-opt==${{ needs.verify-version.outputs.version }}`.
+
+            See [the changelog](https://github.com/Wojciech151218/genai-opt/blob/main/CHANGELOG.md) for what changed.
