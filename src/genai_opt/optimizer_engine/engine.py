@@ -171,8 +171,11 @@ class Engine(Generic[P, Inv]):
 
     async def _run_async(self) -> Population[P, Inv]:
         await self.experiment_controller.setup()
-        while self._state.phase is not IterationPhase.EVALUATE_POPULATION or not self.convergence_criterion(
-            self.population, self.iteration
-        ):
-            await self.step()
-        return self.population
+        try:
+            while self._state.phase is not IterationPhase.EVALUATE_POPULATION or not self.convergence_criterion(
+                self.population, self.iteration
+            ):
+                await self.step()
+            return self.population
+        finally:
+            await self.experiment_controller.teardown()
