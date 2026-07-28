@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 from pathlib import Path
 from random import uniform
 
@@ -75,7 +74,7 @@ def run_simple_experiment(
         .build()
         .from_checkpoint()
     )
-    return await engine.run()
+    return engine.run()
 
 
 def main() -> None:

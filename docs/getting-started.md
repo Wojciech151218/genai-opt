@@ -30,18 +30,14 @@ The project includes a small experiment that evolves float values toward a
 target value.
 
 ```python
-import asyncio
-
 from genai_opt.experiments.simple_experiment import run_simple_experiment
 
 
-population = asyncio.run(
-    run_simple_experiment(
-        target=50.0,
-        iterations=10,
-        mutation_rate=0.2,
-        population_size=20,
-    )
+population = run_simple_experiment(
+    target=50.0,
+    iterations=10,
+    mutation_rate=0.2,
+    population_size=20,
 )
 
 best_genome, best_fitness = max(

@@ -1,3 +1,5 @@
+import asyncio
+
 from genai_opt.experiments.float_genome import FloatGenome
 from genai_opt.optimizer_engine.checkpointer import FilesystemCheckpointer
 from genai_opt.optimizer_engine.convergence_criterion.convergence_criterion import (
@@ -72,6 +74,6 @@ def test_engine_resumes_from_a_phase_checkpoint(tmp_path):
     resumed_engine = _build_test_engine(iterations=3, checkpointer=checkpointer).from_checkpoint()
     assert resumed_engine._state.phase is IterationPhase.MUTATE
 
-    result = asyncio.run(resumed_engine.run())
+    result = resumed_engine.run()
     assert resumed_engine.iteration == 3
     assert result.get_genome_count() == 10

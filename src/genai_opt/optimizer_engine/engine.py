@@ -165,7 +165,10 @@ class Engine(Generic[P, Inv]):
         self._save_checkpoint(metadata)
         return metadata
 
-    async def run(self) -> Population[P, Inv]:
+    def run(self) -> Population[P, Inv]:
+        return asyncio.run(self._run_async())
+
+    async def _run_async(self) -> Population[P, Inv]:
         await self.experiment_controller.setup()
         while (
             self._state.phase is not IterationPhase.EVALUATE_POPULATION

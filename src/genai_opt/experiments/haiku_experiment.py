@@ -318,7 +318,7 @@ def run_haiku_experiment(
         .build()
         .from_checkpoint()
     )
-    return await engine.run()
+    return engine.run()
 
 
 def format_haiku(haiku: HaikuOutput) -> str:
@@ -339,11 +339,9 @@ def print_best_result(population: Population[SimpleSystemPromptPhenotype, HaikuO
 
 
 def main() -> None:
-    population = asyncio.run(
-        run_haiku_experiment(
-            iterations=DEFAULT_ITERATIONS,
-            population_size=DEFAULT_POPULATION_SIZE,
-        )
+    population = run_haiku_experiment(
+        iterations=DEFAULT_ITERATIONS,
+        population_size=DEFAULT_POPULATION_SIZE,
     )
     print_best_result(population)
 
