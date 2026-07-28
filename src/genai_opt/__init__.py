@@ -1,3 +1,7 @@
-"""genai-opt: A Python library for GenAI optimization."""
+"""Evolutionary optimization for GenAI systems, including LLM prompts.
 
-__version__ = "0.1.0"
+The distribution version is read from ``__version__`` below, so this is the only
+place a version number is written.
+"""
+
+__version__ = "1.0.0"

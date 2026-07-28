@@ -284,20 +284,29 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/): `MAJOR.MI
 | New backward-compatible feature | MINOR | `0.1.0` → `0.2.0` |
 | Backward-compatible bug fix | PATCH | `0.2.0` → `0.2.1` |
 
-While the project is at `0.x.y`, treat `MINOR` as the usual bump for new features and `PATCH` for fixes. A `1.0.0` release signals a stable, documented public API.
+The project is at `1.0.0`, so the public API is stable and a breaking change requires a `MAJOR` bump. See [API stability](docs/api-stability.md) for what counts as public.
 
 ## 5.2 Where the Version Lives
 
-The canonical version is in `pyproject.toml`:
+The canonical version is `__version__` in `src/genai_opt/__init__.py`, and that is the only place it is written:
+
+```python
+__version__ = "1.0.0"
+```
+
+`pyproject.toml` declares the version dynamically from it:
 
 ```toml
 [project]
-version = "0.1.0"
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = { attr = "genai_opt.__version__" }
 ```
 
-Expose it from the package (e.g. `genai_opt.__version__`) so users and tests can read it.
+Do not add a literal `version` to `pyproject.toml`. Having one number means the tag, the wheel metadata and `genai_opt.__version__` cannot disagree, and the release pipeline asserts all three match before publishing.
 
-Bump the version only on the branch that prepares a release — not on every feature PR.
+Bump the version only on the branch that prepares a release — not on every feature PR. See [releasing](docs/releasing.md) for the full procedure.
 
 ## 5.3 Changelog
 

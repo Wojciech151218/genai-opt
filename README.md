@@ -1,5 +1,6 @@
 # genai-opt
 [![CI](https://github.com/Wojciech151218/genai-opt/actions/workflows/tests.yml/badge.svg)](https://github.com/Wojciech151218/genai-opt/actions/workflows/tests.yml)
+[![PyPI](https://img.shields.io/pypi/v/genai-opt)](https://pypi.org/project/genai-opt/)
 [![Python](https://img.shields.io/pypi/pyversions/genai-opt)](https://pypi.org/project/genai-opt/)
 
 A Python library for GenAI optimization: an evolutionary engine for optimizing
