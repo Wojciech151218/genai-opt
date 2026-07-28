@@ -76,11 +76,14 @@ class Genome(ABC, Generic[P, Inv]):
             The restored genome, including any stored fitness and invocation.
 
         Raises:
-            ValueError: If the payload names a genome type that is not
-                registered, usually because the module defining it has not been
-                imported.
+            ValueError: If the payload carries no genome type, or names one that
+                is not registered. The latter usually means the module defining
+                that class has not been imported, or the class was renamed or
+                moved since the checkpoint was written.
         """
         genome_type = data.get("genome_type")
+        if not genome_type and getattr(cls, "__abstractmethods__", None):
+            raise ValueError("Checkpoint genome payload is missing its genome_type")
         if genome_type and genome_type != type_path(cls):
             target = _GENOME_REGISTRY.get(genome_type)
             if target is None:

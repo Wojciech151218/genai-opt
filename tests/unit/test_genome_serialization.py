@@ -14,6 +14,7 @@ from genai_opt.experiments.float_genome import FloatGenome
 from genai_opt.experiments.haiku_experiment import HaikuOutput, evaluate_haiku_function
 from genai_opt.optimizer_engine.checkpointer.filesystem import FilesystemCheckpointer
 from genai_opt.optimizer_engine.engine_state import EngineState, IterationPhase
+from genai_opt.optimizer_engine.genome import Genome
 from genai_opt.optimizer_engine.iteration_metadata import IterationMetadata
 from genai_opt.optimizer_engine.operation import Operation
 from genai_opt.optimizer_engine.population import Population
@@ -112,6 +113,19 @@ def test_simple_system_prompt_genome_from_json_requires_restore_context() -> Non
 
     with pytest.raises(ValueError, match="Missing restore context"):
         SimpleSystemPromptGenome.from_json(genome.to_json())
+
+
+def test_genome_dispatch_requires_a_type_tag() -> None:
+    """Dispatching through the base class needs the tag to pick a subclass."""
+    with pytest.raises(ValueError, match="missing its genome_type"):
+        Genome.from_json({"phenotype": 1.0})
+
+
+def test_a_concrete_genome_accepts_an_untagged_payload() -> None:
+    """No dispatch is needed when the caller already named the class."""
+    restored = FloatGenome.from_json({"phenotype": 7.0})
+
+    assert restored.phenotype == 7.0
 
 
 def test_filesystem_checkpointer_json_roundtrip(tmp_path) -> None:
