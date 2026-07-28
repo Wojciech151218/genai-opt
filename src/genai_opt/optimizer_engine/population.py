@@ -139,6 +139,6 @@ class Population(Generic[P, Inv]):
         The genomes themselves are shared, not copied, so neither source
         population is modified but the genome objects are not independent.
         """
-        new_population = Population()
+        new_population: Population[P, Inv] = Population()
         new_population.population = self.population + other.population
         return new_population

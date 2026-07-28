@@ -42,7 +42,7 @@ def create_initial_population(
     Returns:
         The starting population.
     """
-    population = Population()
+    population: Population[float, float] = Population()
     for _ in range(population_size):
         value = uniform(0.0, 100.0)
         population.add_genome(FloatGenome(value, target=target))

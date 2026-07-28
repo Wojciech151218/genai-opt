@@ -38,7 +38,7 @@ class Genome(ABC, Generic[P, Inv]):
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
         if not getattr(cls, "__abstractmethods__", None):
-            _GENOME_REGISTRY[type_path(cls)] = cls  # type: ignore[assignment]
+            _GENOME_REGISTRY[type_path(cls)] = cls
 
     def __init__(self, phenotype: P):
         self.phenotype = phenotype
@@ -123,7 +123,7 @@ class Genome(ABC, Generic[P, Inv]):
 
             self._set_invocation(deserialize_value(invocation_schema, invocation))
         else:
-            self._set_invocation(invocation)  # type: ignore[arg-type]
+            self._set_invocation(invocation)
 
     @property
     def invocation(self) -> Inv:

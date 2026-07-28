@@ -25,6 +25,9 @@ dev = [
     "pytest-cov>=4.0",
     "mkdocs>=1.6",
     "mkdocstrings[python]>=0.26",
+    "mypy>=1.11",
+    "build>=1.2",
+    "twine>=5.1",
     "pre-commit",
 ]
 
@@ -64,6 +67,13 @@ ignore = [
     "D105", # dunder methods are self-describing
     "D107", # google style documents constructor arguments on the class
 ]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src/genai_opt"]
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
