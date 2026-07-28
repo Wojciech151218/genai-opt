@@ -109,7 +109,7 @@ class FilesystemCheckpointer(Checkpointer[P, Inv]):
             raise ValueError(f"Unrecognized checkpoint format in {self._checkpoint_path}")
 
         restore_context = {**self._restore_context, **context}
-        population = Population.from_json(genomes, **restore_context)
+        population: Population[P, Inv] = Population.from_json(genomes, **restore_context)
         phase_value = payload.get("phase", IterationPhase.EVALUATE_POPULATION.value)
         try:
             phase = IterationPhase(phase_value)
@@ -119,7 +119,7 @@ class FilesystemCheckpointer(Checkpointer[P, Inv]):
         offspring_data = payload.get("offspring_population")
         if offspring_data is not None and not isinstance(offspring_data, list):
             raise ValueError(f"Unrecognized offspring population in {self._checkpoint_path}")
-        offspring_population = (
+        offspring_population: Population[P, Inv] | None = (
             Population.from_json(offspring_data, **restore_context) if offspring_data is not None else None
         )
         return EngineState(

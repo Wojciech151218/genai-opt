@@ -25,7 +25,7 @@ def generational_reproduction(
 
     def bind(select_parents: T.ParentSelection) -> T.ReproduceFn:
         async def reproduce(population: T.Population) -> tuple[T.Population, list[Operation]]:
-            new_population = Population()
+            new_population: T.Population = Population()
             operations: list[Operation] = []
             while new_population.get_genome_count() < population_size:
                 parent_a, parent_b = select_parents(population)

@@ -42,7 +42,7 @@ def cycle_seeds_initial_population_strategy(
         raise ValueError("population_size must be positive")
 
     def create_population() -> T.Population:
-        population = Population()
+        population: T.Population = Population()
         for index in range(population_size):
             population.add_genome(create_genome(seeds[index % len(seeds)]))
         return population

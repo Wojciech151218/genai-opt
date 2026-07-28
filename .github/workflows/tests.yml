@@ -1,34 +1,216 @@
-name: Tests
+name: CI
 
 on:
   push:
     branches:
       - main
+      - "release/**"
   pull_request:
+  # Exposed as a reusable workflow so the release pipeline runs these exact
+  # checks before publishing, rather than a copy that can drift.
+  workflow_call:
+
+# A superseded run tells you nothing, so cancel it. Never cancel on main or on a
+# tag, where the result is a record of what was shipped.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/') }}
+
+permissions:
+  contents: read
+
+env:
+  # The measured floor is 93%; the gap absorbs incidental churn without letting
+  # coverage quietly erode.
+  COVERAGE_FLOOR: "90"
+  DEFAULT_PYTHON: "3.13"
 
 jobs:
-  test:
+  lint:
+    name: Lint and format
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          python-version: "3.13"
+          python-version: ${{ env.DEFAULT_PYTHON }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Run tests with coverage
-        run: pytest --cov=src/genai_opt --cov-report=term-missing
+      - name: Ruff check
+        # Docstring rules are part of this, so undocumented public API fails here.
+        run: ruff check . --output-format=github
 
-      - name: Check code style
-        run: ruff check .
+      - name: Ruff format
+        # --diff so a failure shows what to change instead of only naming files.
+        run: ruff format --check --diff .
 
-      - name: Check formatting
-        run: ruff format --check .
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      # Finish the whole matrix: knowing whether a failure is version-specific
+      # is the point of having one.
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Report the environment
+        run: |
+          python -VV
+          pip --version
+          ruff --version
+
+      - name: Check for dependency conflicts
+        run: pip check
+
+      - name: Run tests
+        run: |
+          pytest -vv \
+            --durations=10 \
+            --cov=src/genai_opt \
+            --cov-report=term-missing \
+            --cov-fail-under="${COVERAGE_FLOOR}"
+
+      - name: Summarize coverage
+        if: always()
+        run: |
+          {
+            echo "### Coverage on Python ${{ matrix.python-version }}"
+            echo
+            coverage report --format=markdown || true
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  types:
+    name: Type check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run mypy
+        # Advisory for now: the generic engine still carries a few type: ignore
+        # comments. Drop continue-on-error once it reports clean.
+        continue-on-error: true
+        run: mypy src/genai_opt
+
+  docs:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Build the docs
+        # --strict turns a broken reference or an unparseable docstring into a
+        # failure. The API reference is generated from docstrings, so this also
+        # checks that they parse.
+        run: mkdocs build --strict
+
+  package:
+    name: Distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ env.DEFAULT_PYTHON }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          pip install build twine
+
+      - name: Build sdist and wheel
+        run: python -m build
+
+      - name: Check the distribution metadata
+        run: twine check --strict dist/*
+
+      - name: Verify the built version matches the source
+        run: |
+          set -euo pipefail
+          wheel_version=$(python -c "
+          import pathlib, re
+          wheel = next(pathlib.Path('dist').glob('*.whl'))
+          print(re.match(r'[^-]+-([^-]+)-', wheel.name).group(1))
+          ")
+          source_version=$(grep -oP '__version__ = \"\K[^\"]+' src/genai_opt/__init__.py)
+          echo "wheel=${wheel_version} source=${source_version}"
+          test "${wheel_version}" = "${source_version}"
+
+      - name: Smoke test the wheel in a clean environment
+        # An editable install hides packaging mistakes: a module left out of the
+        # wheel still imports from the working tree. Installing the built
+        # artifact into a fresh venv, outside the repository, is what catches it.
+        run: |
+          set -euo pipefail
+          python -m venv /tmp/smoke
+          /tmp/smoke/bin/pip install --upgrade pip
+          /tmp/smoke/bin/pip install dist/*.whl
+          /tmp/smoke/bin/pip check
+          cd /tmp
+          /tmp/smoke/bin/python -c "
+          import importlib.resources
+
+          import genai_opt
+          from genai_opt.experiments.simple_experiment import run_simple_experiment
+          from genai_opt.optimizer_engine import Engine, ExperimentBuilder, TerminalController
+
+          assert importlib.resources.files('genai_opt').joinpath('py.typed').is_file(), 'py.typed missing from wheel'
+
+          population = run_simple_experiment(iterations=2, population_size=4, checkpoint_dir=None)
+          best, fitness = max(population.get_genome_fitness(), key=lambda item: item[1])
+          assert population.get_genome_count() == 4
+          assert fitness > 0
+          print(f'genai-opt {genai_opt.__version__} ran a smoke experiment, best fitness {fitness:.2f}')
+          "
+
+      - name: Upload the distribution
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error

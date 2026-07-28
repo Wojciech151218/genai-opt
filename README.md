@@ -1,5 +1,6 @@
 # genai-opt
-![Tests](https://github.com/Wojciech151218/genai-opt/actions/workflows/tests.yml/badge.svg)
+[![CI](https://github.com/Wojciech151218/genai-opt/actions/workflows/tests.yml/badge.svg)](https://github.com/Wojciech151218/genai-opt/actions/workflows/tests.yml)
+[![Python](https://img.shields.io/pypi/pyversions/genai-opt)](https://pypi.org/project/genai-opt/)
 
 A Python library for GenAI optimization: an evolutionary engine for optimizing
 anything you can score, including LLM prompts.
