@@ -1,20 +1,18 @@
+import asyncio
+
 from genai_opt.experiments.simple_experiment import run_simple_experiment
 
 
 def test_population_size_one():
     """Engine should handle a population of size 1 without errors."""
-    result = asyncio.run(
-        run_simple_experiment(population_size=1, iterations=5, mutation_rate=0.5, checkpoint_dir=None)
-    )
+    result = asyncio.run(run_simple_experiment(population_size=1, iterations=5, mutation_rate=0.5, checkpoint_dir=None))
     assert result.get_genome_count() >= 1, "Population should have at least 1 genome"
 
 
 def test_zero_iterations():
     """With 0 iterations the engine should return the initial population unchanged."""
     population_size = 10
-    result = asyncio.run(
-        run_simple_experiment(iterations=0, population_size=population_size, checkpoint_dir=None)
-    )
+    result = asyncio.run(run_simple_experiment(iterations=0, population_size=population_size, checkpoint_dir=None))
     assert result.get_genome_count() == population_size, (
         f"Expected {population_size} genomes, got {result.get_genome_count()}"
     )
