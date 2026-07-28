@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "genai-opt"
-version = "0.1.0"
+dynamic = ["version"]
 description = "A Python library for GenAI optimization."
 readme = "README.md"
 license = { text = "MIT" }
@@ -13,6 +13,7 @@ authors = []
 dependencies = [
     "langchain>=0.3",
     "langchain-core>=0.3",
+    "langchain-openai>=0.3",
     "langgraph>=0.2",
     "python-dotenv>=1.2.2",
 ]
@@ -20,8 +21,14 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "ruff>=0.15.20", "pytest-cov>=4.0", "mkdocs>=1.6", "pre-commit"]
 
+[tool.setuptools.dynamic]
+version = { attr = "genai_opt.__version__" }
+
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+genai_opt = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
