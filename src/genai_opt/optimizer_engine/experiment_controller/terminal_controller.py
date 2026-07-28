@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import asyncio
-import select
+import contextlib
 import sys
-import termios
-import tty
 from datetime import datetime
 
 from genai_opt.optimizer_engine.engine_state import IterationPhase
 from genai_opt.optimizer_engine.experiment_controller.experiment_controller import ExperimentController
+from genai_opt.optimizer_engine.experiment_controller.key_reader import KeyReader, create_key_reader
 from genai_opt.optimizer_engine.iteration_metadata import IterationMetadata
 from genai_opt.optimizer_engine.operation import Operation, OperationKind
 from genai_opt.optimizer_engine.utils.typevars import Inv, P
@@ -32,16 +31,44 @@ _KIND_COLORS: dict[OperationKind, str] = {
 
 
 class TerminalController(ExperimentController):
-    """Colored terminal logger for operations with pause/resume via ``p``."""
+    """Colored terminal logger for operations with pause/resume via ``p``.
 
-    def __init__(self, *, listen_for_pause: bool = True) -> None:
+    Key handling is delegated to a :class:`KeyReader`, so this works on POSIX
+    and Windows and degrades to log-only output when stdin is not a terminal.
+
+    Args:
+        listen_for_pause: Whether to watch for the pause key. Forced off when
+            the selected reader cannot deliver keypresses, so reading this
+            attribute always tells you whether pausing is actually available.
+        key_reader: Reader to use instead of the platform default. Mainly for
+            tests and for embedding in other frontends.
+    """
+
+    def __init__(self, *, listen_for_pause: bool = True, key_reader: KeyReader | None = None) -> None:
         super().__init__()
-        self.listen_for_pause = listen_for_pause and sys.stdin.isatty()
+        self._key_reader = key_reader or create_key_reader()
+        self.listen_for_pause = listen_for_pause and self._key_reader.can_read_keys
         self._listener_task: asyncio.Task[None] | None = None
+        self._reader_open = False
 
     async def setup(self) -> None:
-        if self.listen_for_pause:
-            self._listener_task = asyncio.create_task(self._listen_for_pause_key())
+        if not self.listen_for_pause:
+            return
+
+        self._key_reader.open()
+        self._reader_open = True
+        self._listener_task = asyncio.create_task(self._listen_for_pause_key(self._key_reader))
+
+    async def teardown(self) -> None:
+        if self._listener_task is not None:
+            self._listener_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._listener_task
+            self._listener_task = None
+
+        if self._reader_open:
+            self._key_reader.close()
+            self._reader_open = False
 
     async def control_iteration(self, iteration_metadata: IterationMetadata[P, Inv]) -> None:
         phase = iteration_metadata.phase.value if iteration_metadata.phase is not None else "unknown"
@@ -50,36 +77,23 @@ class TerminalController(ExperimentController):
     async def control_operation(self, iteration: int, phase: IterationPhase, operation: Operation) -> None:
         self._log_operation(operation)
 
-    async def _listen_for_pause_key(self) -> None:
+    async def _listen_for_pause_key(self, reader: KeyReader) -> None:
         loop = asyncio.get_running_loop()
         while True:
-            key = await loop.run_in_executor(None, self._read_key_non_blocking)
-            if key == "p":
-                if self.is_paused():
-                    self.resume()
-                    self._print_system("resumed")
-                else:
-                    self.pause()
-                    self._print_system("paused — press 'p' to resume")
-            elif key == "q" and self.is_paused():
-                self._print_system("quit requested while paused (engine keeps waiting)")
-            await asyncio.sleep(0.05)
+            key = await loop.run_in_executor(None, reader.read_key)
+            self._handle_key(key)
+            await asyncio.sleep(0)
 
-    @staticmethod
-    def _read_key_non_blocking() -> str | None:
-        if not sys.stdin.isatty():
-            return None
-
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            tty.setcbreak(fd)
-            ready, _, _ = select.select([sys.stdin], [], [], 0.05)
-            if ready:
-                return sys.stdin.read(1)
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return None
+    def _handle_key(self, key: str | None) -> None:
+        if key == "p":
+            if self.is_paused():
+                self.resume()
+                self._print_system("resumed")
+            else:
+                self.pause()
+                self._print_system("paused — press 'p' to resume")
+        elif key == "q" and self.is_paused():
+            self._print_system("quit requested while paused (engine keeps waiting)")
 
     def _log_phase_summary(self, phase: str, iteration_metadata: IterationMetadata[P, Inv]) -> None:
         fitnesses = [state.fitness for state in iteration_metadata.phenotype_states if state.fitness is not None]
@@ -123,6 +137,7 @@ class TerminalController(ExperimentController):
 
     def _print_system(self, message: str) -> None:
         print(f"{_BOLD}{_YELLOW}[genai-opt]{_RESET} {message}")
+        sys.stdout.flush()
 
     @staticmethod
     def _timestamp() -> str:

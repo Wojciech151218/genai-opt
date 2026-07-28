@@ -11,8 +11,10 @@ from genai_opt.optimizer_engine.engine_state import EngineState, IterationPhase
 from genai_opt.optimizer_engine.experiment_builder import ExperimentBuilder
 from genai_opt.optimizer_engine.experiment_controller import (
     ExperimentController,
+    KeyReader,
     NullExperimentController,
     TerminalController,
+    create_key_reader,
 )
 from genai_opt.optimizer_engine.genome import Genome
 from genai_opt.optimizer_engine.initial_population import (
@@ -42,6 +44,7 @@ __all__ = [
     "Genome",
     "IterationMetadata",
     "IterationPhase",
+    "KeyReader",
     "LLMMetadata",
     "NullCheckpointer",
     "NullExperimentController",
@@ -50,6 +53,7 @@ __all__ = [
     "ReproductionPolicy",
     "TerminalController",
     "TerminalLoggerMetricsCollector",
+    "create_key_reader",
     "cycle_seeds_initial_population",
     "cycle_seeds_initial_population_strategy",
     "generational_reproduction",

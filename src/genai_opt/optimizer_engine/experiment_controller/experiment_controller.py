@@ -24,6 +24,15 @@ class ExperimentController(ABC):
     async def setup(self) -> None:
         raise NotImplementedError("ExperimentController.setup() is not implemented")
 
+    async def teardown(self) -> None:
+        """Release anything claimed by :meth:`setup`.
+
+        The engine calls this once a run finishes, including when it fails, so
+        controllers that start background tasks or grab terminal state can let
+        go of them. Defaults to doing nothing.
+        """
+        return None
+
     @abstractmethod
     async def control_iteration(self, iteration_metadata: IterationMetadata) -> None:
         raise NotImplementedError("ExperimentController.control_iteration() is not implemented")
