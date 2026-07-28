@@ -14,7 +14,7 @@ from genai_opt.adapters.simple_system_prompt_genome.types import (
 )
 from genai_opt.optimizer_engine.genome import Genome
 from genai_opt.optimizer_engine.operation import Operation
-from genai_opt.optimizer_engine.serialization import deserialize_value, import_type, type_path
+from genai_opt.optimizer_engine.serialization import import_type, type_path
 
 
 class SimpleSystemPromptGenome(Genome[SimpleSystemPromptPhenotype, InvSchema], Generic[InvSchema]):

@@ -95,9 +95,7 @@ class FilesystemCheckpointer(Checkpointer[P, Inv]):
         )
 
     def _metadata_to_dict(self, iteration_metadata: IterationMetadata[P, Inv]) -> dict[str, Any]:
-        fitnesses = [
-            state.fitness for state in iteration_metadata.phenotype_states if state.fitness is not None
-        ]
+        fitnesses = [state.fitness for state in iteration_metadata.phenotype_states if state.fitness is not None]
         return {
             "iteration": iteration_metadata.iteration,
             "phase": iteration_metadata.phase.value if iteration_metadata.phase is not None else None,

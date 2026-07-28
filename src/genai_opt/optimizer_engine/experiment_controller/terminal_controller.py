@@ -30,6 +30,7 @@ _KIND_COLORS: dict[OperationKind, str] = {
     "unknown": _DIM,
 }
 
+
 class TerminalController(ExperimentController):
     """Colored terminal logger for operations with pause/resume via ``p``."""
 
