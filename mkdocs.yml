@@ -9,6 +9,7 @@ nav:
   - Home: index.md
   - Getting Started: getting-started.md
   - API Reference: api.md
+  - Web Dashboard: web-dashboard.md
   - Development: development.md
 
 markdown_extensions:
