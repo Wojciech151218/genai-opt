@@ -1,11 +1,17 @@
 import asyncio
-import json
 from typing import Any
 
 import websockets
+from pydantic import BaseModel, ValidationError
 
 from genai_opt.optimizer_engine.engine_state import IterationPhase
 from genai_opt.optimizer_engine.experiment_controller.experiment_controller import ExperimentController
+from genai_opt.optimizer_engine.experiment_controller.websocket_protocol import (
+    ClientCommandMessage,
+    ServerIterationMessage,
+    ServerOperationMessage,
+    ServerStatusMessage,
+)
 from genai_opt.optimizer_engine.iteration_metadata import IterationMetadata
 from genai_opt.optimizer_engine.operation import Operation
 
@@ -49,23 +55,22 @@ class WebSocketExperimentController(ExperimentController):
         try:
             async for message in websocket:
                 try:
-                    data = json.loads(message)
-                    cmd = data.get("command")
-                    if cmd == "pause":
+                    data = ClientCommandMessage.model_validate_json(message)
+                    if data.command == "pause":
                         self.pause()
-                        await self._broadcast({"type": "status", "status": "paused"})
-                    elif cmd == "resume":
+                        await self._broadcast(ServerStatusMessage(status="paused"))
+                    elif data.command == "resume":
                         self.resume()
-                        await self._broadcast({"type": "status", "status": "running"})
-                except json.JSONDecodeError:
+                        await self._broadcast(ServerStatusMessage(status="running"))
+                except ValidationError:
                     pass
         finally:
             self._clients.remove(websocket)
 
-    async def _broadcast(self, payload: dict[str, Any]) -> None:
+    async def _broadcast(self, message: BaseModel) -> None:
         if not self._clients:
             return
-        msg = json.dumps(payload)
+        msg = message.model_dump_json()
         await asyncio.gather(*(client.send(msg) for client in self._clients), return_exceptions=True)
 
     async def _wait_if_paused(self) -> None:
@@ -74,23 +79,21 @@ class WebSocketExperimentController(ExperimentController):
 
     async def control_iteration(self, iteration_metadata: IterationMetadata) -> None:
         await self._broadcast(
-            {
-                "type": "iteration",
-                "iteration": iteration_metadata.iteration,
-                "phase": iteration_metadata.phase.value if iteration_metadata.phase else None,
-                "population_size": len(iteration_metadata.phenotype_states),
-            }
+            ServerIterationMessage(
+                iteration=iteration_metadata.iteration,
+                phase=iteration_metadata.phase.value if iteration_metadata.phase else "UNKNOWN",
+                population_size=len(iteration_metadata.phenotype_states),
+            )
         )
         await self._wait_if_paused()
 
     async def control_operation(self, iteration: int, phase: IterationPhase, operation: Operation) -> None:
         await self._broadcast(
-            {
-                "type": "operation",
-                "iteration": iteration,
-                "phase": phase.value,
-                "operation_kind": operation.kind,
-                "duration": operation.duration_seconds,
-            }
+            ServerOperationMessage(
+                iteration=iteration,
+                phase=phase.value,
+                operation_kind=operation.kind,
+                duration=operation.duration_seconds,
+            )
         )
         await self._wait_if_paused()
