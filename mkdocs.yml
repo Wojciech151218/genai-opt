@@ -9,6 +9,7 @@ nav:
   - Home: index.md
   - Getting Started: getting-started.md
   - API Reference: api.md
+  - SQLite Checkpointer: sqlite-checkpointer.md
   - Development: development.md
 
 markdown_extensions:
