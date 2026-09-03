@@ -25,12 +25,13 @@ from genai_opt.adapters.simple_system_prompt_genome import (
 )
 from genai_opt.adapters.simple_system_prompt_genome.helpers import build_operation, extract_parsed
 from genai_opt.env import load_project_env
+from genai_opt.experiments.dashboard import start_dashboard_ui, stop_dashboard_ui
 from genai_opt.optimizer_engine import (
     ExperimentBuilder,
-    FilesystemCheckpointer,
     Population,
     ReproductionPolicy,
-    TerminalController,
+    SqliteCheckpointer,
+    WebSocketExperimentController,
     cycle_seeds_initial_population,
     cycle_seeds_initial_population_strategy,
     generational_reproduction,
@@ -270,9 +271,21 @@ def build_haiku_experiment(
     mutation_rate: float = DEFAULT_MUTATION_RATE,
     population_size: int = DEFAULT_POPULATION_SIZE,
     shared_task: HumanMessage | None = None,
-    checkpoint_dir: str | Path | None = None,
+    checkpoint_db: str | Path | None = None,
+    experiment_id: str = "haiku_experiment",
+    websocket_host: str = "localhost",
+    websocket_port: int = 8765,
 ) -> ExperimentBuilder[SimpleSystemPromptPhenotype, HaikuOutput]:
     task_message = shared_task or build_haiku_task_message()
+    checkpointer = (
+        SqliteCheckpointer(
+            db_path=checkpoint_db,
+            experiment_id=experiment_id,
+            restore_context=haiku_checkpoint_restore_context(llm, task_message),
+        )
+        if checkpoint_db is not None
+        else None
+    )
     return ExperimentBuilder(
         inital_population_strategy=cycle_seeds_initial_population_strategy(
             SEED_SYSTEM_PROMPTS,
@@ -285,13 +298,8 @@ def build_haiku_experiment(
             generational_reproduction(population_size),
             tournament_selection,
         ),
-        checkpointer=FilesystemCheckpointer(
-            checkpoint_dir,
-            restore_context=haiku_checkpoint_restore_context(llm, task_message),
-        )
-        if checkpoint_dir
-        else None,
-        experiment_controller=TerminalController(),
+        checkpointer=checkpointer,
+        experiment_controller=WebSocketExperimentController(host=websocket_host, port=websocket_port),
     )
 
 
@@ -304,22 +312,27 @@ async def run_haiku_experiment(
     mutation_rate: float = DEFAULT_MUTATION_RATE,
     population_size: int = DEFAULT_POPULATION_SIZE,
     shared_task: HumanMessage | None = None,
-    checkpoint_dir: str | Path | None = ".checkpoints/haiku_experiment",
+    checkpoint_db: str | Path | None = ".checkpoints/haiku_experiment.db",
+    launch_ui: bool = False,
 ) -> Population[SimpleSystemPromptPhenotype, HaikuOutput]:
     chat_model = llm or create_llm(model=model, api_key=api_key)
-    engine = (
-        build_haiku_experiment(
-            chat_model,
-            iterations=iterations,
-            mutation_rate=mutation_rate,
-            population_size=population_size,
-            shared_task=shared_task,
-            checkpoint_dir=checkpoint_dir,
+    ui = start_dashboard_ui() if launch_ui else None
+    try:
+        engine = (
+            build_haiku_experiment(
+                chat_model,
+                iterations=iterations,
+                mutation_rate=mutation_rate,
+                population_size=population_size,
+                shared_task=shared_task,
+                checkpoint_db=checkpoint_db,
+            )
+            .build()
+            .from_checkpoint()
         )
-        .build()
-        .from_checkpoint()
-    )
-    return await engine.run()
+        return await engine.run()
+    finally:
+        stop_dashboard_ui(ui)
 
 
 def format_haiku(haiku: HaikuOutput) -> str:
@@ -344,6 +357,7 @@ def main() -> None:
         run_haiku_experiment(
             iterations=DEFAULT_ITERATIONS,
             population_size=DEFAULT_POPULATION_SIZE,
+            launch_ui=True,
         )
     )
     print_best_result(population)
