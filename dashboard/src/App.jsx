@@ -19,7 +19,7 @@ function App() {
     
     ws.current.onopen = () => {
       setIsConnected(true);
-      setStatus('running'); // Założenie optymistyczne
+      setStatus('running'); // Optimistic assumption
     };
 
     ws.current.onmessage = (event) => {
@@ -63,7 +63,7 @@ function App() {
 
   const sendCommand = (cmd) => {
     if (!isConnected) {
-      showToast('Silnik jest offline. Zanim wyślesz komendę, uruchom backend.');
+      showToast('Engine is offline. Start the backend before sending commands.');
       return;
     }
     if (ws.current && ws.current.readyState === WebSocket.OPEN) {
