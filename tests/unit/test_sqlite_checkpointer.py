@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from genai_opt.experiments.float_genome import FloatGenome
-from genai_opt.optimizer_engine.checkpointer.database import SqliteCheckpointer
+from genai_opt.optimizer_engine.checkpointer.sqlite_checkpointer import SqliteCheckpointer
 from genai_opt.optimizer_engine.engine_state import EngineState, IterationPhase
 from genai_opt.optimizer_engine.iteration_metadata import IterationMetadata
 from genai_opt.optimizer_engine.population import Population
