@@ -180,6 +180,7 @@ body {
   display: flex;
   flex-direction: column;
   padding: 24px;
+  min-height: 0;
 }
 
 .panel-title {
