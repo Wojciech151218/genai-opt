@@ -33,6 +33,7 @@ class Engine(Generic[P, Inv]):
         self.mutation_policy = mutation_policy
         self.checkpointer = checkpointer or NullCheckpointer()
         self.experiment_controller = experiment_controller or NullExperimentController()
+        self._launch_ui = False
 
     @property
     def population(self) -> Population[P, Inv]:
@@ -129,6 +130,10 @@ class Engine(Generic[P, Inv]):
     def _save_checkpoint(self, metadata: IterationMetadata[P, Inv]) -> None:
         self.checkpointer.save_checkpoint(self._state, metadata)
 
+    def start_dashboard(self) -> Self:
+        self._launch_ui = True
+        return self
+
     async def step(self) -> IterationMetadata[P, Inv]:
         """Execute and persist one phase of the current iteration."""
         await self._wait_if_paused()
@@ -167,9 +172,19 @@ class Engine(Generic[P, Inv]):
         return metadata
 
     async def run(self) -> Population[P, Inv]:
-        await self.experiment_controller.setup()
-        while self._state.phase is not IterationPhase.EVALUATE_POPULATION or not self.convergence_criterion(
-            self.population, self.iteration
-        ):
-            await self.step()
-        return self.population
+        ui_process = None
+        if self._launch_ui:
+            from genai_opt.optimizer_engine.dashboard import start_dashboard_ui
+            ui_process = start_dashboard_ui()
+            
+        try:
+            await self.experiment_controller.setup()
+            while self._state.phase is not IterationPhase.EVALUATE_POPULATION or not self.convergence_criterion(
+                self.population, self.iteration
+            ):
+                await self.step()
+            return self.population
+        finally:
+            if ui_process:
+                from genai_opt.optimizer_engine.dashboard import stop_dashboard_ui
+                stop_dashboard_ui(ui_process)
