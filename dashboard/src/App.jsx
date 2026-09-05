@@ -1,9 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
-import { Play, Pause, Activity, Wifi, WifiOff } from 'lucide-react';
+import { Play, Pause, Activity, Wifi, WifiOff, Sun, Moon } from 'lucide-react';
 import './index.css';
 
 function App() {
   const [status, setStatus] = useState('stopped');
+  const [theme, setTheme] = useState('dark');
   const [isConnected, setIsConnected] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [metrics, setMetrics] = useState({
@@ -11,6 +12,7 @@ function App() {
     populationSize: 0,
     phase: 'IDLE',
   });
+  const [populationJson, setPopulationJson] = useState(null);
   const [operations, setOperations] = useState([]);
   const ws = useRef(null);
 
@@ -52,6 +54,9 @@ function App() {
           populationSize: data.population_size,
           phase: data.phase || 'TRANSITION',
         }));
+        if (data.population_json) {
+          setPopulationJson(data.population_json);
+        }
       } else if (data.type === 'operation') {
         setOperations(prev => [data, ...prev].slice(0, 30));
       }
@@ -74,6 +79,10 @@ function App() {
       if (ws.current) ws.current.close();
     };
   }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -110,6 +119,15 @@ function App() {
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            <button 
+              className="btn" 
+              style={{ padding: '8px', borderRadius: '50%' }}
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              title="Toggle Theme"
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
             {/* Connection Status Indicator */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: isConnected ? 'var(--status-running)' : 'var(--text-secondary)' }}>
               {isConnected ? <Wifi size={16} /> : <WifiOff size={16} />}
@@ -161,6 +179,13 @@ function App() {
                 <div className="metric-label">Active Phase</div>
                 <div className="metric-value" style={{ color: 'var(--primary-glow)' }}>{formatName(metrics.phase)}</div>
               </div>
+            </div>
+          </div>
+
+          <div className="population-panel glass-panel">
+            <h2 className="panel-title">Population State</h2>
+            <div className="population-content">
+              {populationJson ? JSON.stringify(populationJson, null, 2) : 'Awaiting population data...'}
             </div>
           </div>
 
