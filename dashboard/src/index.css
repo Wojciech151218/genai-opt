@@ -66,6 +66,8 @@ body {
 /* State-based orb colors */
 .state-running .orb-1 { background: rgba(16, 185, 129, 0.25); }
 .state-running .orb-2 { background: rgba(52, 211, 153, 0.25); }
+.state-pausing .orb-1 { background: rgba(245, 158, 11, 0.25); }
+.state-pausing .orb-2 { background: rgba(251, 191, 36, 0.25); }
 .state-paused .orb-1 { background: rgba(245, 158, 11, 0.25); }
 .state-paused .orb-2 { background: rgba(251, 191, 36, 0.25); }
 .state-stopped .orb-1 { background: rgba(239, 68, 68, 0.25); }
@@ -121,6 +123,7 @@ body {
   letter-spacing: 1px;
 }
 .status-badge.running { color: var(--status-running); background: rgba(16, 185, 129, 0.1); }
+.status-badge.pausing { color: var(--status-paused); background: rgba(245, 158, 11, 0.1); }
 .status-badge.paused { color: var(--status-paused); background: rgba(245, 158, 11, 0.1); }
 .status-badge.stopped { color: var(--status-stopped); background: rgba(239, 68, 68, 0.1); }
 
@@ -130,6 +133,7 @@ body {
   border-radius: 50%;
 }
 .status-badge.running .status-dot { background: var(--status-running); box-shadow: 0 0 12px var(--status-running); animation: pulse 2s infinite; }
+.status-badge.pausing .status-dot { background: var(--status-paused); animation: pulse 1s infinite; }
 .status-badge.paused .status-dot { background: var(--status-paused); }
 .status-badge.stopped .status-dot { background: var(--status-stopped); }
 

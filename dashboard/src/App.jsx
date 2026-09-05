@@ -14,6 +14,25 @@ function App() {
   const [operations, setOperations] = useState([]);
   const ws = useRef(null);
 
+  const formatName = (name) => {
+    if (!name) return '';
+    const mapping = {
+      'evaluate_offspring': 'Offspring Evaluation',
+      'evaluate_population': 'Population Evaluation',
+      'crossover': 'Crossover Phase',
+      'mutate_genome': 'Genome Mutation',
+      'evaluate_genome': 'Genome Evaluation',
+      'llm_generate_haiku': 'LLM Haiku Generation',
+      'llm_mutate_haiku': 'LLM Haiku Mutation',
+      'SELECTION': 'Selection',
+      'CROSSOVER': 'Crossover',
+      'MUTATION': 'Mutation',
+      'EVALUATION': 'Evaluation',
+      'REPLACEMENT': 'Replacement'
+    };
+    return mapping[name] || name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
+
   const connectWebSocket = () => {
     ws.current = new WebSocket('ws://localhost:8765');
     
@@ -114,10 +133,15 @@ function App() {
           </button>
           <button 
             className="btn" 
-            onClick={() => sendCommand('pause')}
+            onClick={() => {
+              if (status === 'running') {
+                setStatus('pausing');
+                sendCommand('pause');
+              }
+            }}
             style={{ opacity: (status !== 'running' && isConnected) ? 0.5 : 1 }}
           >
-            <Pause size={18} /> Pause
+            <Pause size={18} /> {status === 'pausing' ? 'Pausing...' : 'Pause'}
           </button>
         </div>
 
@@ -135,7 +159,7 @@ function App() {
               </div>
               <div className="metric-card" style={{ gridColumn: '1 / -1' }}>
                 <div className="metric-label">Active Phase</div>
-                <div className="metric-value" style={{ color: 'var(--primary-glow)' }}>{metrics.phase}</div>
+                <div className="metric-value" style={{ color: 'var(--primary-glow)' }}>{formatName(metrics.phase)}</div>
               </div>
             </div>
           </div>
@@ -146,8 +170,8 @@ function App() {
               {operations.map((op, idx) => (
                 <div key={idx} className="operation-card">
                   <div className="op-header">
-                    <span className="op-kind">{op.operation_kind}</span>
-                    <span className="op-phase">{op.phase}</span>
+                    <span className="op-kind">{formatName(op.operation_kind)}</span>
+                    <span className="op-phase">{formatName(op.phase)}</span>
                   </div>
                   <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                     Iter: {op.iteration} | Duration: {op.duration ? op.duration.toFixed(2) : '-'}s
