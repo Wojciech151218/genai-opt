@@ -28,9 +28,14 @@ class ExperimentBuilder(Generic[P, Inv]):
         self.reproduction_policy = reproduction_policy
         self.checkpointer = checkpointer or NullCheckpointer()
         self.experiment_controller = experiment_controller or NullExperimentController()
+        self._launch_ui = False
+
+    def start_dashboard(self) -> Self:
+        self._launch_ui = True
+        return self
 
     def build(self) -> Engine[P, Inv]:
-        return Engine(
+        engine = Engine(
             self.inital_population_strategy(),
             self.convergence_criterion,
             self.mutation_policy,
@@ -38,3 +43,6 @@ class ExperimentBuilder(Generic[P, Inv]):
             self.checkpointer,
             self.experiment_controller,
         )
+        if self._launch_ui:
+            engine.start_dashboard()
+        return engine

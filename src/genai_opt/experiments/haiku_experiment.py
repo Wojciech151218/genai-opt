@@ -25,7 +25,6 @@ from genai_opt.adapters.simple_system_prompt_genome import (
 )
 from genai_opt.adapters.simple_system_prompt_genome.helpers import build_operation, extract_parsed
 from genai_opt.env import load_project_env
-from genai_opt.experiments.dashboard import start_dashboard_ui, stop_dashboard_ui
 from genai_opt.optimizer_engine import (
     ExperimentBuilder,
     Population,
@@ -316,23 +315,19 @@ async def run_haiku_experiment(
     launch_ui: bool = False,
 ) -> Population[SimpleSystemPromptPhenotype, HaikuOutput]:
     chat_model = llm or create_llm(model=model, api_key=api_key)
-    ui = start_dashboard_ui() if launch_ui else None
-    try:
-        engine = (
-            build_haiku_experiment(
-                chat_model,
-                iterations=iterations,
-                mutation_rate=mutation_rate,
-                population_size=population_size,
-                shared_task=shared_task,
-                checkpoint_db=checkpoint_db,
-            )
-            .build()
-            .from_checkpoint()
-        )
-        return await engine.run()
-    finally:
-        stop_dashboard_ui(ui)
+    builder = build_haiku_experiment(
+        chat_model,
+        iterations=iterations,
+        mutation_rate=mutation_rate,
+        population_size=population_size,
+        shared_task=shared_task,
+        checkpoint_db=checkpoint_db,
+    )
+    if launch_ui:
+        builder.start_dashboard()
+        
+    engine = builder.build().from_checkpoint()
+    return await engine.run()
 
 
 def format_haiku(haiku: HaikuOutput) -> str:

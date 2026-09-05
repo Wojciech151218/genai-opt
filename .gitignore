@@ -14,3 +14,9 @@ venv/
 .env
 .idea/
 *.coverage
+
+# macOS
+.DS_Store
+
+# Checkpoints
+.checkpoints/

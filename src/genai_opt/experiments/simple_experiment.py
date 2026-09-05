@@ -4,7 +4,6 @@ import asyncio
 from pathlib import Path
 from random import uniform
 
-from genai_opt.experiments.dashboard import start_dashboard_ui, stop_dashboard_ui
 from genai_opt.experiments.float_genome import FloatGenome
 from genai_opt.optimizer_engine import (
     ExperimentBuilder,
@@ -74,22 +73,18 @@ async def run_simple_experiment(
     *,
     launch_ui: bool = False,
 ) -> Population[float, float]:
-    ui = start_dashboard_ui() if launch_ui else None
-    try:
-        engine = (
-            build_simple_experiment(
-                target=target,
-                iterations=iterations,
-                mutation_rate=mutation_rate,
-                population_size=population_size,
-                checkpoint_db=checkpoint_db,
-            )
-            .build()
-            .from_checkpoint()
-        )
-        return await engine.run()
-    finally:
-        stop_dashboard_ui(ui)
+    builder = build_simple_experiment(
+        target=target,
+        iterations=iterations,
+        mutation_rate=mutation_rate,
+        population_size=population_size,
+        checkpoint_db=checkpoint_db,
+    )
+    if launch_ui:
+        builder.start_dashboard()
+        
+    engine = builder.build().from_checkpoint()
+    return await engine.run()
 
 
 def main() -> None:
