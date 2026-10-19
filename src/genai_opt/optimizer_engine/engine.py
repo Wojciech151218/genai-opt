@@ -185,6 +185,7 @@ class Engine(Generic[P, Inv]):
                 await self.step()
             return self.population
         finally:
+            await self.experiment_controller.teardown()
             if ui_process:
                 from genai_opt.optimizer_engine.dashboard import stop_dashboard_ui
                 stop_dashboard_ui(ui_process)

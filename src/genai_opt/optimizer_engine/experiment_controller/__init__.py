@@ -3,5 +3,11 @@ from genai_opt.optimizer_engine.experiment_controller.experiment_controller impo
     NullExperimentController,
 )
 from genai_opt.optimizer_engine.experiment_controller.terminal_controller import TerminalController
+from genai_opt.optimizer_engine.experiment_controller.websocket_controller import WebSocketExperimentController
 
-__all__ = ["ExperimentController", "NullExperimentController", "TerminalController"]
+__all__ = [
+    "ExperimentController",
+    "NullExperimentController",
+    "TerminalController",
+    "WebSocketExperimentController",
+]

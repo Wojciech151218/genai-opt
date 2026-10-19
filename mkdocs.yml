@@ -11,6 +11,7 @@ nav:
   - API Reference: api.md
   - Web Dashboard: web-dashboard.md
   - SQLite Checkpointer: sqlite-checkpointer.md
+  - WebSocket Controller: websocket-controller.md
   - Development: development.md
 
 markdown_extensions:

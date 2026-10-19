@@ -32,6 +32,10 @@ class ExperimentController(ABC):
         """Receive an operation as it becomes available within a phase."""
         return None
 
+    async def teardown(self) -> None:
+        """Clean up controller resources after the engine run finishes."""
+        return None
+
 
 class NullExperimentController(ExperimentController):
     async def setup(self) -> None:

@@ -184,8 +184,43 @@ function App() {
 
           <div className="population-panel glass-panel">
             <h2 className="panel-title">Population State</h2>
-            <div className="population-content">
-              {populationJson ? JSON.stringify(populationJson, null, 2) : 'Awaiting population data...'}
+            <div className="population-list">
+              {Array.isArray(populationJson) && populationJson.length > 0 ? (
+                populationJson.map((member, idx) => (
+                  <div key={member.id || idx} className="genome-card">
+                    <div className="genome-header">
+                      <span className="genome-id">
+                        {member.id ? formatName(String(member.id)) : `Genome #${idx + 1}`}
+                      </span>
+                      <span className={`genome-fitness ${member.fitness == null ? 'pending' : ''}`}>
+                        {member.fitness != null
+                          ? `Fitness: ${Number(member.fitness).toFixed(2)}`
+                          : 'Fitness: Pending'}
+                      </span>
+                    </div>
+                    <div className="genome-section-label">Phenotype (JSON)</div>
+                    <pre className="genome-json">
+                      {JSON.stringify(member.phenotype ?? member, null, 2)}
+                    </pre>
+                    {member.invocation != null && (
+                      <>
+                        <div className="genome-section-label" style={{ marginTop: '10px' }}>
+                          Invocation Output
+                        </div>
+                        <pre className="genome-json genome-invocation">
+                          {typeof member.invocation === 'object'
+                            ? JSON.stringify(member.invocation, null, 2)
+                            : String(member.invocation)}
+                        </pre>
+                      </>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: '40px' }}>
+                  Awaiting population data...
+                </div>
+              )}
             </div>
           </div>
 
