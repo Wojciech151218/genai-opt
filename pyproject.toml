@@ -13,6 +13,7 @@ authors = []
 dependencies = [
     "langchain>=0.3",
     "langchain-core>=0.3",
+    "langchain-openai>=0.3",
     "langgraph>=0.2",
     "pydantic>=2.0.0",
     "python-dotenv>=1.2.2",

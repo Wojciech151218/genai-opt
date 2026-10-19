@@ -177,7 +177,7 @@ function App() {
               </div>
               <div className="metric-card" style={{ gridColumn: '1 / -1' }}>
                 <div className="metric-label">Active Phase</div>
-                <div className="metric-value" style={{ color: 'var(--primary-glow)' }}>{formatName(metrics.phase)}</div>
+                <div className="metric-value metric-phase" style={{ color: 'var(--primary-glow)' }}>{formatName(metrics.phase)}</div>
               </div>
             </div>
           </div>

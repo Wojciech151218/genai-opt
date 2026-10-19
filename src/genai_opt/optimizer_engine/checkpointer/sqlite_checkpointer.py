@@ -65,6 +65,8 @@ class SqliteCheckpointer(Checkpointer[P, Inv]):
         self._init_db()
 
     def _init_db(self) -> None:
+        if self.db_path != ":memory:":
+            Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
                 """
