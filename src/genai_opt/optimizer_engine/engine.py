@@ -175,8 +175,9 @@ class Engine(Generic[P, Inv]):
         ui_process = None
         if self._launch_ui:
             from genai_opt.optimizer_engine.dashboard import start_dashboard_ui
+
             ui_process = start_dashboard_ui()
-            
+
         try:
             await self.experiment_controller.setup()
             while self._state.phase is not IterationPhase.EVALUATE_POPULATION or not self.convergence_criterion(
@@ -188,4 +189,5 @@ class Engine(Generic[P, Inv]):
             await self.experiment_controller.teardown()
             if ui_process:
                 from genai_opt.optimizer_engine.dashboard import stop_dashboard_ui
+
                 stop_dashboard_ui(ui_process)

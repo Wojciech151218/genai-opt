@@ -325,7 +325,7 @@ async def run_haiku_experiment(
     )
     if launch_ui:
         builder.start_dashboard()
-        
+
     engine = builder.build().from_checkpoint()
     return await engine.run()
 
