@@ -8,10 +8,19 @@ from pydantic import BaseModel, Field
 
 from genai_opt.optimizer_engine.checkpointer.checkpointer import Checkpointer
 from genai_opt.optimizer_engine.engine_state import EngineState, IterationPhase
+from genai_opt.optimizer_engine.genome import Genome
 from genai_opt.optimizer_engine.iteration_metadata import IterationMetadata
 from genai_opt.optimizer_engine.operation import Operation
 from genai_opt.optimizer_engine.population import Population
 from genai_opt.optimizer_engine.utils.typevars import Inv, P
+
+_RESTORE_ATTRS = (
+    "invocation_schema",
+    "invoke_function",
+    "evaluate_function",
+    "mutate_function",
+    "crossover_function",
+)
 
 
 class OperationRecord(BaseModel):
@@ -57,11 +66,16 @@ class SqliteCheckpointer(Checkpointer[P, Inv]):
         db_path: str | Path,
         experiment_id: str = "default",
         *,
-        restore_context: dict[str, Any] | None = None,
+        genome: Genome[P, Inv] | None = None,
     ):
         self.db_path = str(db_path)
         self.experiment_id = experiment_id
-        self._restore_context = restore_context or {}
+        self._restore_context: dict[str, Any] = {}
+        if genome is not None:
+            for attr in _RESTORE_ATTRS:
+                value = getattr(genome, f"_{attr}", None)
+                if value is not None:
+                    self._restore_context[attr] = value
         self._init_db()
 
     def _init_db(self) -> None:

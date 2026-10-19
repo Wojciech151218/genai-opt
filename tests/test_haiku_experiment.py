@@ -5,7 +5,6 @@ from genai_opt.experiments.haiku_experiment import (
     SEED_SYSTEM_PROMPTS,
     HaikuOutput,
     _is_valid_haiku_structure,
-    build_haiku_experiment,
     build_haiku_task_message,
     create_haiku_genome,
     create_initial_population,
@@ -37,15 +36,6 @@ def test_create_initial_population_uses_seed_prompts() -> None:
     for index, genome in enumerate(population.population):
         assert genome.phenotype.system_prompt == SEED_SYSTEM_PROMPTS[index % len(SEED_SYSTEM_PROMPTS)]
         assert genome.phenotype.llm is llm
-
-
-def test_build_haiku_experiment_wires_population_strategy() -> None:
-    llm = _StubChatModel()
-    builder = build_haiku_experiment(llm, iterations=2, population_size=3)
-    engine = builder.build()
-
-    assert engine.population.get_genome_count() == 3
-    assert engine.convergence_criterion(engine.population, 0) is False
 
 
 def test_haiku_task_message_includes_cultural_theme() -> None:

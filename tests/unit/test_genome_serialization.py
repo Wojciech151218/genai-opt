@@ -15,7 +15,6 @@ from genai_opt.experiments.haiku_experiment import HaikuOutput, evaluate_haiku_f
 from genai_opt.optimizer_engine.checkpointer.filesystem import FilesystemCheckpointer
 from genai_opt.optimizer_engine.engine_state import EngineState, IterationPhase
 from genai_opt.optimizer_engine.iteration_metadata import IterationMetadata
-from genai_opt.optimizer_engine.operation import Operation
 from genai_opt.optimizer_engine.population import Population
 
 
@@ -40,8 +39,8 @@ class _StubChatModel(BaseChatModel):
 
 
 def _stub_evaluate():
-    async def evaluate(_invocation: HaikuOutput) -> Operation[float]:
-        return Operation(1.0)
+    async def evaluate(_invocation: HaikuOutput) -> float:
+        return 1.0
 
     return evaluate
 
