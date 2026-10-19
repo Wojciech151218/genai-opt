@@ -36,3 +36,21 @@ academic evaluation and team collaboration.
 
 - This is the first documentation scaffold and can be expanded as the public
   API stabilizes.
+
+---
+
+## 2026-07-29 - Database Checkpointer Implementation
+
+**Goal:** Implement persistent database storage for experiment checkpoints.
+
+**Completed:**
+
+- Created `SqliteCheckpointer` class inheriting from base `Checkpointer`.
+- Implemented `save_checkpoint` and `load` methods using relational database queries.
+- Created `test_database_checkpointer.py` ensuring full TDD coverage.
+
+**Problem:** 
+Needed robust persistent database storage without violating the "no unnecessary dependencies" rule.
+
+**Solution:** 
+Used the standard library's `sqlite3` module to implement a lightweight, zero-configuration local SQL database.

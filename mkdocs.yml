@@ -10,6 +10,7 @@ nav:
   - Getting Started: getting-started.md
   - API Reference: api.md
   - Web Dashboard: web-dashboard.md
+  - SQLite Checkpointer: sqlite-checkpointer.md
   - Development: development.md
 
 markdown_extensions:
