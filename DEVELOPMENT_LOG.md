@@ -49,10 +49,10 @@ academic evaluation and team collaboration.
 - Implemented `save_checkpoint` and `load` methods using relational database queries.
 - Created `test_database_checkpointer.py` ensuring full TDD coverage.
 
-**Problem:** 
+**Problem:**
 Needed robust persistent database storage without violating the "no unnecessary dependencies" rule.
 
-**Solution:** 
+**Solution:**
 Used the standard library's `sqlite3` module to implement a lightweight, zero-configuration local SQL database.
 
 ---
@@ -64,7 +64,7 @@ Used the standard library's `sqlite3` module to implement a lightweight, zero-co
 **Completed:**
 
 - Implemented `WebSocketExperimentController` and Pydantic message schemas (`ServerStatusMessage`, `ServerIterationMessage`, `ServerOperationMessage`, `ClientCommandMessage`).
-- Scaffolded the React + Vite web dashboard (`dashboard/`) with a liquid-glass dark UI, live iteration metrics, operation feed, and WebSocket connection state indicators.
+- Scaffolded the React + Vite web dashboard (`dashboard/`) with a liquid-glass dark UI inspired by macOS and iOS systems theme, live iteration metrics, operation feed, and WebSocket connection state indicators.
 - Added MkDocs documentation pages for `SqliteCheckpointer`, `WebSocketExperimentController`, and the Web Dashboard.
 - Added unit tests for `WebSocketExperimentController` (`tests/unit/test_websocket_controller.py`).
 
@@ -110,10 +110,12 @@ Moved `dashboard.py` into `genai_opt.optimizer_engine`, allowing `Engine.run()` 
 - Verified all 78 unit, integration, and edge-case tests pass with `pytest` and formatted the codebase with `ruff`.
 
 **Problem:**
+
 1. Running multiple experiments sequentially in tests failed with `OSError: [Errno 48] address already in use` on port `8765`, and `SqliteCheckpointer` failed if `.checkpoints/` did not exist yet.
 2. Shrinking the browser window caused the `Active Phase` metric card and fixed `350px` grid columns to overflow outside the main dashboard frame.
 
 **Solution:**
+
 1. Added `await self.experiment_controller.teardown()` to `Engine.run()`'s `finally` block and automatic parent directory creation in `SqliteCheckpointer._init_db()`.
 2. Replaced fixed grid widths with fluid `minmax(...)` tracks, added `min-width: 0` / `overflow: hidden` containment on panels, responsive font sizing (`clamp(...)`), and `@media` breakpoints for smaller viewports.
 
@@ -136,3 +138,21 @@ Browser applications cannot read local `.checkpoints/*.db` SQLite files directly
 
 **Solution:**
 Parsed stored `CheckpointPayloadRecord` and `IterationMetadataRecord` JSON directly inside `SqliteCheckpointer` (stripping internal LangChain `llm` client objects) and exposed them through a lightweight stdlib `ThreadingHTTPServer` proxied by Vite.
+
+---
+
+## 2026-10-23 - Dual UI Design System: Liquid Glass and Modern Developer
+
+**Goal:** Add a clean, distraction-free analytical workspace style alongside Liquid Glass for users who prefer utilitarian developer interfaces similar to Google Colab, Google Drive, and TensorBoard.
+
+**Completed:**
+
+- Added a persistent `uiStyle` (`glass` | `modern`) switcher in `App.jsx` synchronized with `<html data-style="...">` and `localStorage` alongside the `dark` / `light` theme toggle.
+- Created `dashboard/src/modern-developer.css` implementing a full-bleed workspace layout, flat Material/Workspace surfaces, hairline borders, `JetBrains Mono` code cells, and dark/light palettes without decorative background orbs or blur filters.
+- Updated `docs/web-dashboard.md` to document all four style and theme combinations.
+
+**Problem:**
+Decorative glassmorphism effects (animated background orbs, heavy backdrop blur, floating margins) can feel visually busy or distracting during long analytical sessions.
+
+**Solution:**
+Scoped the alternative workspace aesthetic cleanly under `[data-style="modern"]` CSS custom properties and layout overrides in a dedicated stylesheet (`modern-developer.css`), preserving `Liquid Glass` intact while offering one-click switching.
