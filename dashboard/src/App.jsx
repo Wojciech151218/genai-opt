@@ -1,12 +1,40 @@
 import { useEffect, useState, useRef } from 'react';
-import { Play, Pause, Activity, Wifi, WifiOff, Sun, Moon, Database } from 'lucide-react';
+import {
+  Play,
+  Pause,
+  Activity,
+  Wifi,
+  WifiOff,
+  Sun,
+  Moon,
+  Database,
+  Sparkles,
+  Terminal,
+} from 'lucide-react';
 import DatabaseExplorer from './DatabaseExplorer';
 import './index.css';
+
+function getInitialPreference(key, fallback, allowed) {
+  try {
+    const saved = window.localStorage.getItem(key);
+    if (saved && allowed.includes(saved)) {
+      return saved;
+    }
+  } catch {
+    // Ignore storage errors in restricted environments
+  }
+  return fallback;
+}
 
 function App() {
   const [activeView, setActiveView] = useState('live');
   const [status, setStatus] = useState('stopped');
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState(() =>
+    getInitialPreference('genai-opt-theme', 'dark', ['dark', 'light'])
+  );
+  const [uiStyle, setUiStyle] = useState(() =>
+    getInitialPreference('genai-opt-style', 'glass', ['glass', 'modern'])
+  );
   const [isConnected, setIsConnected] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [metrics, setMetrics] = useState({
@@ -89,7 +117,21 @@ function App() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
+    try {
+      window.localStorage.setItem('genai-opt-theme', theme);
+    } catch {
+      // Ignore storage errors
+    }
   }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-style', uiStyle);
+    try {
+      window.localStorage.setItem('genai-opt-style', uiStyle);
+    } catch {
+      // Ignore storage errors
+    }
+  }, [uiStyle]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -107,7 +149,7 @@ function App() {
   };
 
   return (
-    <div className={`state-${status}`} style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+    <div className={`app-shell state-${status}`}>
       {/* Background Liquid Orbs */}
       <div className="orb orb-1"></div>
       <div className="orb orb-2"></div>
@@ -122,15 +164,34 @@ function App() {
       <div className="dashboard-container glass-panel">
         <header className="header">
           <div className="title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-             <Activity size={28} color="var(--primary-glow)" /> GenAI Opt // Control Dashboard
+             <Activity size={26} className="brand-icon" /> GenAI Opt // Control Dashboard
           </div>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <div className="header-actions">
+            <div className="style-switcher" role="group" aria-label="Interface style">
+              <button
+                type="button"
+                className={`style-switch-btn ${uiStyle === 'glass' ? 'active' : ''}`}
+                onClick={() => setUiStyle('glass')}
+                title="Liquid Glass interface"
+              >
+                <Sparkles size={14} /> Liquid Glass
+              </button>
+              <button
+                type="button"
+                className={`style-switch-btn ${uiStyle === 'modern' ? 'active' : ''}`}
+                onClick={() => setUiStyle('modern')}
+                title="Modern Developer workspace interface"
+              >
+                <Terminal size={14} /> Modern Developer
+              </button>
+            </div>
+
             <button 
-              className="btn" 
-              style={{ padding: '8px', borderRadius: '50%' }}
+              type="button"
+              className="btn theme-toggle-btn" 
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              title="Toggle Theme"
+              title="Toggle Dark / Light Theme"
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
