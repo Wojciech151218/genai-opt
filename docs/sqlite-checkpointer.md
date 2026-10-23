@@ -1,36 +1,50 @@
 # SQLite Checkpointer
 
-The `SqliteCheckpointer` provides a persistent storage mechanism for tracking evolutionary optimization experiments locally without requiring a dedicated database server.
+The `SqliteCheckpointer` provides zero-configuration, persistent local storage for evolutionary optimization experiments using Python's standard-library `sqlite3` module and Pydantic schemas.
 
 ## Overview
 
-It leverages Python's built-in `sqlite3` module to record generation metadata, fitness metrics, and operation logs. It ensures that you can halt the engine, inspect historical data, and theoretically resume processes from saved checkpoints.
+`SqliteCheckpointer` persists engine state and phase telemetry after every step in `Engine.step()`, enabling:
+- **Fault-tolerant resumption** via `engine.from_checkpoint()`,
+- **Historical inspection** of populations, offspring, fitness statistics, token usage, and LLM operations via Python methods or the Web Dashboard's **Database Explorer**.
 
 ## Database Schema
 
-The database uses a clean, normalized relational schema composed of three main tables:
+All checkpoints are stored in a single `checkpoints` table created automatically on initialization:
 
-1. **`experiments`**: Tracks overarching experiment details (name, timestamp).
-2. **`iterations`**: Logs metrics for each completed iteration, including population fitness extremes (best, worst) and current population size.
-3. **`operations`**: Stores telemetry related to individual phase actions (e.g., reproduction, mutation) alongside execution duration.
-
-### JSON Payload Integration
-
-In addition to relational columns, some tables utilize TEXT columns to store serialized `JSON` payloads. This provides flexibility when storing heterogeneous phenotype data or dynamically changing operational metrics without requiring complex database migrations.
+- `id`: Auto-incrementing primary key ordering every recorded phase step.
+- `experiment_id`: Logical identifier grouping runs within the same `.db` file.
+- `iteration`: Current iteration index.
+- `phase`: Next `IterationPhase` to execute upon resumption.
+- `payload`: Serialized `CheckpointPayloadRecord` JSON containing `population` and `offspring_population`.
+- `metadata`: Serialized `IterationMetadataRecord` JSON containing completed phase metrics (`best_fitness`, `mean_fitness`, `worst_fitness`, `total_tokens`, `total_cost`, `total_duration_seconds`) and `operations`.
+- `timestamp`: UTC creation timestamp.
 
 ## Usage
 
-To use the checkpointer, instantiate it and attach it to your engine's workflow:
+### Saving and Resuming Engine State
 
 ```python
-from genai_opt.optimizer_engine.checkpointer.sqlite_checkpointer import SqliteCheckpointer
+from genai_opt.optimizer_engine import SqliteCheckpointer
 
-# Initialize with a local db file path
-db = SqliteCheckpointer(db_path="experiments.db")
+checkpointer = SqliteCheckpointer(
+    db_path=".checkpoints/haiku_experiment.db",
+    experiment_id="haiku_experiment",
+)
 
-# Automatically sets up tables on first run
-await db.setup()
+# Attach to ExperimentBuilder and restore latest state if present
+engine = builder.build().from_checkpoint()
+await engine.run()
+```
 
-# Save iteration state
-await db.save_iteration(experiment_id=1, iteration_metadata=metadata)
+### Querying Historical Runs
+
+`SqliteCheckpointer` also exposes read-only query helpers used by the Database Explorer API:
+
+```python
+reader = SqliteCheckpointer(db_path=".checkpoints/haiku_experiment.db")
+
+experiments = reader.list_experiments()
+checkpoints = reader.list_checkpoints("haiku_experiment")
+detail = reader.get_checkpoint(checkpoints[-1].id)
 ```
