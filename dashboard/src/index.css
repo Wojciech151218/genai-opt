@@ -55,6 +55,12 @@ body {
   padding: 20px 0;
 }
 
+.app-shell {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
 /* Liquid Orbs in background */
 .orb {
   position: fixed;
@@ -152,6 +158,66 @@ body {
   font-size: clamp(18px, 2vw, 24px);
   font-weight: 600;
   letter-spacing: -0.5px;
+}
+
+.brand-icon {
+  color: #38bdf8;
+  flex-shrink: 0;
+}
+
+[data-theme="light"] .brand-icon {
+  color: #0ea5e9;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.style-switcher {
+  display: inline-flex;
+  background: var(--population-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.style-switch-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.18s ease;
+}
+
+.style-switch-btn:hover {
+  color: var(--text-primary);
+}
+
+.style-switch-btn.active {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-primary);
+}
+
+[data-theme="light"] .style-switch-btn.active {
+  background: #ffffff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.theme-toggle-btn {
+  padding: 8px;
+  border-radius: 50%;
 }
 
 .status-badge {
