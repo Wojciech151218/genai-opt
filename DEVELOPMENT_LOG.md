@@ -116,3 +116,23 @@ Moved `dashboard.py` into `genai_opt.optimizer_engine`, allowing `Engine.run()` 
 **Solution:**
 1. Added `await self.experiment_controller.teardown()` to `Engine.run()`'s `finally` block and automatic parent directory creation in `SqliteCheckpointer._init_db()`.
 2. Replaced fixed grid widths with fluid `minmax(...)` tracks, added `min-width: 0` / `overflow: hidden` containment on panels, responsive font sizing (`clamp(...)`), and `@media` breakpoints for smaller viewports.
+
+---
+
+## 2026-10-23 - SQLite Database Explorer and Standalone Dashboard Mode
+
+**Goal:** Extend the web dashboard beyond live WebSocket monitoring so users can browse historical experiments, checkpoint timelines, populations, and LLM operation logs stored in SQLite databases.
+
+**Completed:**
+
+- Extended `SqliteCheckpointer` with Pydantic history records (`GenomeSnapshotRecord`, `ExperimentSummaryRecord`, `CheckpointSummaryRecord`, `CheckpointDetailRecord`) and query methods (`list_experiments()`, `list_checkpoints()`, `get_checkpoint()`).
+- Implemented `DashboardAPIServer` (`dashboard_api.py`) using Python's built-in `http.server` to serve read-only JSON endpoints (`/api/databases`, `/api/experiments`, `/api/checkpoints`, `/api/checkpoints/<id>`) without external dependencies.
+- Integrated `DashboardAPIServer` lifecycle into `dashboard.py`, added a standalone CLI entry point (`python -m genai_opt.optimizer_engine.dashboard`), and configured `/api` proxying in `dashboard/vite.config.js`.
+- Built the `DatabaseExplorer` React view and top navigation tabs (`Live Monitor` / `Database Explorer`) supporting both dark and light themes, parent/offspring population switching, and operation token breakdowns.
+- Added unit tests for `SqliteCheckpointer` history queries and `DashboardAPIServer` endpoints, and updated MkDocs documentation.
+
+**Problem:**
+Browser applications cannot read local `.checkpoints/*.db` SQLite files directly, and instantiating `Population.from_json()` for arbitrary historical experiments would require runtime `restore_context` callables and live LLM instances.
+
+**Solution:**
+Parsed stored `CheckpointPayloadRecord` and `IterationMetadataRecord` JSON directly inside `SqliteCheckpointer` (stripping internal LangChain `llm` client objects) and exposed them through a lightweight stdlib `ThreadingHTTPServer` proxied by Vite.
