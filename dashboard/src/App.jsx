@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import DatabaseExplorer from './DatabaseExplorer';
 import './index.css';
+import './modern-developer.css';
 
 function getInitialPreference(key, fallback, allowed) {
   try {
