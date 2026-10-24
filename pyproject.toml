@@ -4,32 +4,89 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "genai-opt"
-version = "0.1.0"
-description = "A Python library for GenAI optimization."
+dynamic = ["version"]
+description = "Evolutionary optimization for GenAI systems, including LLM prompts."
 readme = "README.md"
-license = { text = "MIT" }
-requires-python = ">=3.13"
-authors = []
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+# Collective, matching LICENSE. Naming individuals here would either publish
+# personal addresses or, for a contributor without a public one, single someone
+# out as the sole Author. Per-person credit lives in the commit history.
+authors = [{ name = "genai-opt contributors" }]
+keywords = [
+    "evolutionary-algorithm",
+    "genetic-algorithm",
+    "genai",
+    "llm",
+    "optimization",
+    "prompt-engineering",
+    "prompt-optimization",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
 dependencies = [
     "langchain>=0.3",
     "langchain-core>=0.3",
+    "langchain-openai>=0.3",
     "langgraph>=0.2",
+    "pydantic>=2.0.0",
     "python-dotenv>=1.2.2",
+    "websockets>=12.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/Wojciech151218/genai-opt"
+Source = "https://github.com/Wojciech151218/genai-opt"
+# The docs are built with mkdocs but not yet hosted, so this points at the
+# sources, which GitHub renders. Repoint it once a site is published.
+Documentation = "https://github.com/Wojciech151218/genai-opt/tree/main/docs"
+Issues = "https://github.com/Wojciech151218/genai-opt/issues"
+Changelog = "https://github.com/Wojciech151218/genai-opt/blob/main/CHANGELOG.md"
+
 [project.optional-dependencies]
-dev = ["pytest>=7.0", "ruff>=0.15.20", "pytest-cov>=4.0", "mkdocs>=1.6", "pre-commit"]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.15.20",
+    "pytest-cov>=4.0",
+    "mkdocs>=1.6",
+    "mkdocstrings[python]>=0.26",
+    "mypy>=1.11",
+    "build>=1.2",
+    "twine>=5.1",
+    "pre-commit",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "genai_opt.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["genai_opt*"]
+
+[tool.setuptools.package-data]
+genai_opt = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src", "."]
 
 [tool.ruff]
-target-version = "py313"
+target-version = "py311"
 line-length = 120
-src = ["src", "tests"]
+src = ["src", "experiments", "tests"]
 
 [tool.ruff.lint]
 select = [
@@ -40,13 +97,30 @@ select = [
     "N",   # pep8 naming conventions
     "B",   # bugbear (common logic mistakes)
     "C4",  # flake8-comprehensions (simplify list/dict expressions)
+    "D",   # pydocstyle (public API must be documented in code)
     "UP",  # pyupgrade (outdated syntax)
     "RUF", # ruff-specific rules
 ]
 ignore = [
     "N817",
     "UP046",
+    "D105", # dunder methods are self-describing
+    "D107", # google style documents constructor arguments on the class
 ]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["src/genai_opt"]
+ignore_missing_imports = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D"]
+"experiments/**" = ["D"]
 
 [tool.coverage.run]
 source = ["src"]

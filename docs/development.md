@@ -25,23 +25,29 @@ Do not commit directly to `main`.
 
 ## Quality Checks
 
-Run tests:
+These are the same checks CI runs, so running them locally first avoids a
+round-trip:
 
 ```bash
-pytest
-```
-
-Run linting:
-
-```bash
+pytest -vv --cov=src/genai_opt --cov-report=term-missing
 ruff check .
+ruff format --check .
+mkdocs build --strict
 ```
 
-Build docs:
+`ruff check` enforces docstrings on every public module, class, function and
+method, in Google style. New public API without a docstring fails the build.
 
-```bash
-mkdocs build
-```
+CI additionally runs the suite on every supported Python version (3.11, 3.12 and
+3.13) and installs the built wheel into a clean environment, since an editable
+install hides packaging mistakes.
+
+## Documentation Structure
+
+Reference documentation is generated from docstrings by `mkdocstrings`, so
+`docs/api.md` lists what to include rather than restating it. Document behavior in
+the docstring, not on the page. Narrative pages — phases, checkpoints, credentials
+and cost, API stability — are written by hand.
 
 ## Testing Expectations
 

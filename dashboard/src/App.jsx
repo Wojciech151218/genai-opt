@@ -1,0 +1,352 @@
+import { useEffect, useState, useRef } from 'react';
+import {
+  Play,
+  Pause,
+  Activity,
+  Wifi,
+  WifiOff,
+  Sun,
+  Moon,
+  Database,
+  Sparkles,
+  Terminal,
+} from 'lucide-react';
+import DatabaseExplorer from './DatabaseExplorer';
+import './index.css';
+import './modern-developer.css';
+
+function getInitialPreference(key, fallback, allowed) {
+  try {
+    const saved = window.localStorage.getItem(key);
+    if (saved && allowed.includes(saved)) {
+      return saved;
+    }
+  } catch {
+    // Ignore storage errors in restricted environments
+  }
+  return fallback;
+}
+
+function App() {
+  const [activeView, setActiveView] = useState('live');
+  const [status, setStatus] = useState('stopped');
+  const [theme, setTheme] = useState(() =>
+    getInitialPreference('genai-opt-theme', 'dark', ['dark', 'light'])
+  );
+  const [uiStyle, setUiStyle] = useState(() =>
+    getInitialPreference('genai-opt-style', 'glass', ['glass', 'modern'])
+  );
+  const [isConnected, setIsConnected] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+  const [metrics, setMetrics] = useState({
+    iteration: 0,
+    populationSize: 0,
+    phase: 'IDLE',
+  });
+  const [populationJson, setPopulationJson] = useState(null);
+  const [operations, setOperations] = useState([]);
+  const ws = useRef(null);
+
+  const formatName = (name) => {
+    if (!name) return '';
+    const mapping = {
+      'evaluate_offspring': 'Offspring Evaluation',
+      'evaluate_population': 'Population Evaluation',
+      'reproduce': 'Reproduction',
+      'mutate': 'Mutation',
+      'replace': 'Replacement',
+      'crossover': 'Crossover Phase',
+      'invoke': 'Genome Invocation',
+      'evaluate': 'Genome Evaluation',
+      'mutate_genome': 'Genome Mutation',
+      'evaluate_genome': 'Genome Evaluation',
+      'llm_generate_haiku': 'LLM Haiku Generation',
+      'llm_mutate_haiku': 'LLM Haiku Mutation',
+      'SELECTION': 'Selection',
+      'CROSSOVER': 'Crossover',
+      'MUTATION': 'Mutation',
+      'EVALUATION': 'Evaluation',
+      'REPLACEMENT': 'Replacement'
+    };
+    return mapping[name] || name.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
+
+  const connectWebSocket = () => {
+    ws.current = new WebSocket('ws://localhost:8765');
+    
+    ws.current.onopen = () => {
+      setIsConnected(true);
+      setStatus('running'); // Optimistic assumption
+    };
+
+    ws.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      if (data.type === 'status') {
+        setStatus(data.status);
+      } else if (data.type === 'iteration') {
+        setMetrics(prev => ({
+          ...prev,
+          iteration: data.iteration,
+          populationSize: data.population_size,
+          phase: data.phase || 'TRANSITION',
+        }));
+        if (data.population_json) {
+          setPopulationJson(data.population_json);
+        }
+      } else if (data.type === 'operation') {
+        setOperations(prev => [data, ...prev].slice(0, 30));
+      }
+    };
+
+    ws.current.onclose = () => {
+      setIsConnected(false);
+      setStatus('stopped');
+    };
+    
+    ws.current.onerror = () => {
+      setIsConnected(false);
+      setStatus('stopped');
+    };
+  };
+
+  useEffect(() => {
+    connectWebSocket();
+    return () => {
+      if (ws.current) ws.current.close();
+    };
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    try {
+      window.localStorage.setItem('genai-opt-theme', theme);
+    } catch {
+      // Ignore storage errors
+    }
+  }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-style', uiStyle);
+    try {
+      window.localStorage.setItem('genai-opt-style', uiStyle);
+    } catch {
+      // Ignore storage errors
+    }
+  }, [uiStyle]);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const sendCommand = (cmd) => {
+    if (!isConnected) {
+      showToast('Engine is offline. Start the backend before sending commands.');
+      return;
+    }
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      ws.current.send(JSON.stringify({ command: cmd }));
+    }
+  };
+
+  return (
+    <div className={`app-shell state-${status}`}>
+      {/* Background Liquid Orbs */}
+      <div className="orb orb-1"></div>
+      <div className="orb orb-2"></div>
+
+      {/* Floating Toast Notification */}
+      {toastMessage && (
+        <div className="toast">
+          {toastMessage}
+        </div>
+      )}
+
+      <div className="dashboard-container glass-panel">
+        <header className="header">
+          <div className="title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+             <Activity size={26} className="brand-icon" /> GenAI Opt // Control Dashboard
+          </div>
+          
+          <div className="header-actions">
+            <div className="style-switcher" role="group" aria-label="Interface style">
+              <button
+                type="button"
+                className={`style-switch-btn ${uiStyle === 'glass' ? 'active' : ''}`}
+                onClick={() => setUiStyle('glass')}
+                title="Liquid Glass interface"
+              >
+                <Sparkles size={14} /> Liquid Glass
+              </button>
+              <button
+                type="button"
+                className={`style-switch-btn ${uiStyle === 'modern' ? 'active' : ''}`}
+                onClick={() => setUiStyle('modern')}
+                title="Modern Developer workspace interface"
+              >
+                <Terminal size={14} /> Modern Developer
+              </button>
+            </div>
+
+            <button 
+              type="button"
+              className="btn theme-toggle-btn" 
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              title="Toggle Dark / Light Theme"
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
+            {/* Connection Status Indicator */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: isConnected ? 'var(--status-running)' : 'var(--text-secondary)' }}>
+              {isConnected ? <Wifi size={16} /> : <WifiOff size={16} />}
+              {isConnected ? 'Engine Online' : 'Engine Offline'}
+            </div>
+
+            <div className={`status-badge ${status}`}>
+              <div className="status-dot"></div>
+              {status}
+            </div>
+          </div>
+        </header>
+
+        <div className="top-bar-row">
+          <div className="nav-tabs" role="tablist" aria-label="Dashboard views">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeView === 'live'}
+              className={`nav-tab ${activeView === 'live' ? 'active' : ''}`}
+              onClick={() => setActiveView('live')}
+            >
+              <Activity size={16} /> Live Monitor
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeView === 'database'}
+              className={`nav-tab ${activeView === 'database' ? 'active' : ''}`}
+              onClick={() => setActiveView('database')}
+            >
+              <Database size={16} /> Database Explorer
+            </button>
+          </div>
+
+          {activeView === 'live' && (
+            <div className="controls">
+              <button 
+                className="btn" 
+                onClick={() => sendCommand('resume')}
+                style={{ opacity: (status !== 'paused' && isConnected) ? 0.5 : 1 }}
+              >
+                <Play size={18} /> Resume
+              </button>
+              <button 
+                className="btn" 
+                onClick={() => {
+                  if (status === 'running') {
+                    setStatus('pausing');
+                    sendCommand('pause');
+                  }
+                }}
+                style={{ opacity: (status !== 'running' && isConnected) ? 0.5 : 1 }}
+              >
+                <Pause size={18} /> {status === 'pausing' ? 'Pausing...' : 'Pause'}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {activeView === 'live' ? (
+          <div className="main-grid">
+            <div className="metrics-panel glass-panel">
+              <h2 className="panel-title">Engine Live State</h2>
+              <div className="metrics-grid">
+                <div className="metric-card">
+                  <div className="metric-label">Current Iteration</div>
+                  <div className="metric-value">{metrics.iteration}</div>
+                </div>
+                <div className="metric-card">
+                  <div className="metric-label">Population Size</div>
+                  <div className="metric-value">{metrics.populationSize}</div>
+                </div>
+                <div className="metric-card" style={{ gridColumn: '1 / -1' }}>
+                  <div className="metric-label">Active Phase</div>
+                  <div className="metric-value metric-phase" style={{ color: 'var(--primary-glow)' }}>{formatName(metrics.phase)}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="population-panel glass-panel">
+              <h2 className="panel-title">Population State</h2>
+              <div className="population-list">
+                {Array.isArray(populationJson) && populationJson.length > 0 ? (
+                  populationJson.map((member, idx) => (
+                    <div key={member.id || idx} className="genome-card">
+                      <div className="genome-header">
+                        <span className="genome-id">
+                          {member.id ? formatName(String(member.id)) : `Genome #${idx + 1}`}
+                        </span>
+                        <span className={`genome-fitness ${member.fitness == null ? 'pending' : ''}`}>
+                          {member.fitness != null
+                            ? `Fitness: ${Number(member.fitness).toFixed(2)}`
+                            : 'Fitness: Pending'}
+                        </span>
+                      </div>
+                      <div className="genome-section-label">Phenotype (JSON)</div>
+                      <pre className="genome-json">
+                        {JSON.stringify(member.phenotype ?? member, null, 2)}
+                      </pre>
+                      {member.invocation != null && (
+                        <>
+                          <div className="genome-section-label" style={{ marginTop: '10px' }}>
+                            Invocation Output
+                          </div>
+                          <pre className="genome-json genome-invocation">
+                            {typeof member.invocation === 'object'
+                              ? JSON.stringify(member.invocation, null, 2)
+                              : String(member.invocation)}
+                          </pre>
+                        </>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: '40px' }}>
+                    Awaiting population data...
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="operations-panel glass-panel">
+              <h2 className="panel-title">Live Operations Feed</h2>
+              <div className="operations-list">
+                {operations.map((op, idx) => (
+                  <div key={idx} className="operation-card">
+                    <div className="op-header">
+                      <span className="op-kind">{formatName(op.operation_kind)}</span>
+                      <span className="op-phase">{formatName(op.phase)}</span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      Iter: {op.iteration} | Duration: {op.duration ? op.duration.toFixed(2) : '-'}s
+                    </div>
+                  </div>
+                ))}
+                {operations.length === 0 && (
+                  <div style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: '40px' }}>
+                    Awaiting engine telemetry...
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <DatabaseExplorer formatName={formatName} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default App;
