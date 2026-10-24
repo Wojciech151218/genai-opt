@@ -1,3 +1,5 @@
+"""Predicates that decide when the engine should stop iterating."""
+
 from genai_opt.optimizer_engine.convergence_criterion.convergence_criterion import (
     iteration_limited_convergence,
 )

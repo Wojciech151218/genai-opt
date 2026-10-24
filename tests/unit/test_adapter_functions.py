@@ -14,15 +14,16 @@ from genai_opt.adapters.simple_system_prompt_genome.functions import (
     mutate_prompt_function,
 )
 from genai_opt.adapters.simple_system_prompt_genome.genome import SimpleSystemPromptGenome
-from genai_opt.adapters.simple_system_prompt_genome.helpers import (
-    build_operation,
-    extract_parsed,
-)
+from genai_opt.adapters.simple_system_prompt_genome.helpers import extract_parsed
 from genai_opt.adapters.simple_system_prompt_genome.types import (
     EvaluationScore,
     SimpleSystemPromptPhenotype,
 )
-from genai_opt.optimizer_engine.operation import Operation
+from genai_opt.optimizer_engine.utils.timed_operation import (
+    AdapterResult,
+    build_operation,
+    timed_operation,
+)
 
 _USAGE = {"input_tokens": 12, "output_tokens": 8, "total_tokens": 20}
 _RESPONSE_METADATA = {"model_name": "fake-model"}
@@ -96,27 +97,39 @@ def test_build_operation_falls_back_without_usage():
     assert operation.value == "value"
 
 
-def test_mutate_prompt_function_returns_operation_with_metadata():
+def test_mutate_prompt_function_returns_adapter_result():
     mutate = mutate_prompt_function("Improve: {system_prompt}", _FakeStructuredModel())
-    operation = mutate(_phenotype())
-    assert isinstance(operation, Operation)
+    result = mutate(_phenotype())
+    assert isinstance(result, AdapterResult)
+    assert result.value.system_prompt == "evolved prompt"
+    assert result.raw is not None
+
+    operation = timed_operation(mutate)(_phenotype())
     assert operation.value.system_prompt == "evolved prompt"
     assert operation.tokens == 20
     assert operation.llm_metadata.model == "fake-model"
+    assert operation.duration_seconds > 0
 
 
-def test_evaluate_prompt_function_returns_operation_with_metadata():
+def test_evaluate_prompt_function_returns_adapter_result():
     evaluate = evaluate_prompt_function("Judge: {output}", _FakeStructuredModel())
-    operation = asyncio.run(evaluate(EvaluationScore(score=0.0)))
+    result = asyncio.run(evaluate(EvaluationScore(score=0.0)))
+    assert isinstance(result, AdapterResult)
+    assert result.value == 88.0
+
+    operation = asyncio.run(timed_operation(evaluate)(EvaluationScore(score=0.0)))
     assert operation.value == 88.0
     assert operation.tokens == 20
 
 
-def test_llm_mutate_function_returns_bare_operation():
+def test_llm_mutate_function_returns_plain_phenotype():
     llm = _FakeStructuredModel()
     mutate = llm_mutate_function({llm: 1.0})
-    operation = mutate(_phenotype())
-    assert isinstance(operation, Operation)
+    phenotype = mutate(_phenotype())
+    assert isinstance(phenotype, SimpleSystemPromptPhenotype)
+    assert phenotype.llm is llm
+
+    operation = timed_operation(mutate)(_phenotype())
     assert operation.llm_metadata is None
     assert operation.value.llm is llm
 
@@ -130,7 +143,7 @@ def test_genome_mutate_preserves_metadata_and_id():
         invoke_function=invoke_task_message_function(HumanMessage(content="go"), EvaluationScore),
         evaluate_function=evaluate_prompt_function("Judge: {output}", _FakeStructuredModel()),
         mutate_function=mutate_prompt_function("Improve: {system_prompt}", _FakeStructuredModel()),
-        crossover_function=lambda a, b: Operation(a),
+        crossover_function=lambda a, b: a,
     )
     operation = asyncio.run(genome._mutate())
 

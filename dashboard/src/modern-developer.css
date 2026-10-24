@@ -1,0 +1,336 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap");
+
+/* ==========================================================================
+   Modern Developer UI Style (Inspired by Google Colab / Drive / TensorBoard)
+   Activated when <html data-style="modern">
+   ========================================================================== */
+
+:root[data-style="modern"] {
+  --bg-dark: #131314;
+  --modern-surface: #1e1f20;
+  --modern-surface-hover: #282a2c;
+  --modern-header-bg: #1e1f20;
+  --glass-bg: #1e1f20;
+  --glass-border: #3c4043;
+  --glass-glow: none;
+  --modern-card-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+
+  --primary-glow: #8ab4f8;
+  --modern-accent: #8ab4f8;
+  --modern-accent-soft: rgba(138, 180, 248, 0.16);
+  --modern-tf-accent: #ffab40;
+
+  --text-primary: #e3e3e3;
+  --text-secondary: #9aa0a6;
+  --population-bg: #131314;
+
+  --status-running: #81c995;
+  --status-running-bg: rgba(129, 201, 149, 0.14);
+  --status-paused: #fdd663;
+  --status-paused-bg: rgba(253, 214, 99, 0.14);
+  --status-stopped: #f28b82;
+  --status-stopped-bg: rgba(242, 139, 130, 0.14);
+}
+
+:root[data-style="modern"][data-theme="light"] {
+  --bg-dark: #f8f9fa;
+  --modern-surface: #ffffff;
+  --modern-surface-hover: #f1f3f4;
+  --modern-header-bg: #ffffff;
+  --glass-bg: #ffffff;
+  --glass-border: #dadce0;
+  --glass-glow: none;
+  --modern-card-shadow: 0 1px 2px rgba(60, 64, 67, 0.08);
+
+  --primary-glow: #1a73e8;
+  --modern-accent: #1a73e8;
+  --modern-accent-soft: #e8f0fe;
+  --modern-tf-accent: #e37400;
+
+  --text-primary: #202124;
+  --text-secondary: #5f6368;
+  --population-bg: #f1f3f4;
+
+  --status-running: #137333;
+  --status-running-bg: #e6f4ea;
+  --status-paused: #b06000;
+  --status-paused-bg: #fef7e0;
+  --status-stopped: #c5221f;
+  --status-stopped-bg: #fce8e6;
+}
+
+/* Remove decorative background orbs & animations */
+[data-style="modern"] .orb {
+  display: none !important;
+}
+
+/* Full-bleed workspace shell (Google Drive / Colab / TensorBoard layout) */
+[data-style="modern"] #root {
+  padding: 0;
+  align-items: stretch;
+  justify-content: flex-start;
+}
+
+[data-style="modern"] .app-shell {
+  min-height: 100vh;
+  align-items: stretch;
+}
+
+[data-style="modern"] .dashboard-container {
+  width: 100%;
+  max-width: none;
+  height: 100vh;
+  min-height: 100vh;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: var(--bg-dark);
+  padding: 0;
+  gap: 0;
+}
+
+/* Flat App Bar & Toolbar */
+[data-style="modern"] .header {
+  background: var(--modern-header-bg);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 12px 24px;
+}
+
+[data-style="modern"] .title {
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--text-primary);
+}
+
+[data-style="modern"] .brand-icon {
+  color: var(--modern-tf-accent);
+}
+
+[data-style="modern"] .top-bar-row {
+  background: var(--modern-header-bg);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 8px 24px;
+}
+
+/* Workspace Body Grids */
+[data-style="modern"] .dashboard-container > .main-grid {
+  padding: 16px 24px;
+  gap: 16px;
+}
+
+[data-style="modern"] .explorer-wrapper {
+  padding: 16px 24px;
+  gap: 14px;
+}
+
+[data-style="modern"] .explorer-wrapper .main-grid {
+  gap: 16px;
+}
+
+/* Clean, Crisp Developer Panels */
+[data-style="modern"] .metrics-panel,
+[data-style="modern"] .population-panel,
+[data-style="modern"] .operations-panel,
+[data-style="modern"] .explorer-toolbar,
+[data-style="modern"] .explorer-error {
+  background: var(--modern-surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  box-shadow: var(--modern-card-shadow);
+}
+
+[data-style="modern"] .panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+[data-style="modern"] .pop-panel-header {
+  padding-bottom: 10px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+[data-style="modern"] .pop-panel-header .panel-title {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* Google Workspace / Colab Pill Tabs & Switchers */
+[data-style="modern"] .nav-tabs,
+[data-style="modern"] .style-switcher,
+[data-style="modern"] .pop-toggle {
+  background: var(--population-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 3px;
+}
+
+[data-style="modern"] .nav-tab {
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 13px;
+}
+
+[data-style="modern"] .nav-tab.active,
+[data-style="modern"] .style-switch-btn.active,
+[data-style="modern"] .pop-toggle-btn.active {
+  background: var(--modern-accent-soft);
+  color: var(--modern-accent);
+  box-shadow: none;
+  font-weight: 600;
+}
+
+/* Flat Material Buttons & Inputs */
+[data-style="modern"] .btn {
+  background: var(--modern-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+
+[data-style="modern"] .btn:hover {
+  background: var(--modern-surface-hover);
+  transform: none;
+}
+
+[data-style="modern"] .theme-toggle-btn {
+  padding: 7px;
+  border-radius: 6px;
+}
+
+[data-style="modern"] .glass-select,
+[data-style="modern"] .glass-input {
+  background: var(--modern-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  font-size: 13px;
+  padding: 6px 10px;
+}
+
+[data-style="modern"] .glass-select:focus,
+[data-style="modern"] .glass-input:focus {
+  border-color: var(--modern-accent);
+}
+
+/* Status Chips (Google Cloud / Colab style) */
+[data-style="modern"] .status-badge {
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+}
+
+[data-style="modern"] .status-badge.running {
+  color: var(--status-running);
+  background: var(--status-running-bg);
+}
+
+[data-style="modern"] .status-badge.pausing,
+[data-style="modern"] .status-badge.paused {
+  color: var(--status-paused);
+  background: var(--status-paused-bg);
+}
+
+[data-style="modern"] .status-badge.stopped {
+  color: var(--status-stopped);
+  background: var(--status-stopped-bg);
+}
+
+[data-style="modern"] .status-badge.running .status-dot {
+  box-shadow: none;
+}
+
+/* Cards, Code Cells & Checkpoints */
+[data-style="modern"] .metric-card,
+[data-style="modern"] .genome-card,
+[data-style="modern"] .operation-card,
+[data-style="modern"] .checkpoint-item,
+[data-style="modern"] .step-metric {
+  background: var(--modern-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  animation: none;
+}
+
+[data-style="modern"] .checkpoint-item:hover {
+  background: var(--modern-surface-hover);
+}
+
+[data-style="modern"] .checkpoint-item.active {
+  background: var(--modern-accent-soft);
+  border-color: var(--modern-accent);
+}
+
+[data-style="modern"] .cp-phase-badge,
+[data-style="modern"] .op-kind {
+  color: var(--modern-accent);
+}
+
+[data-style="modern"] .genome-fitness {
+  color: var(--status-running);
+  background: var(--status-running-bg);
+  border-radius: 6px;
+}
+
+[data-style="modern"] .op-phase,
+[data-style="modern"] .genome-fitness.pending {
+  background: var(--population-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+}
+
+[data-style="modern"][data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(60, 64, 67, 0.22);
+}
+
+[data-style="modern"][data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(60, 64, 67, 0.38);
+}
+
+/* Google Colab-inspired Code Cells for Phenotype JSON & Invocation */
+[data-style="modern"] .genome-json {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--population-bg);
+  border: 1px solid var(--glass-border);
+  border-left: 3px solid var(--modern-accent);
+  border-radius: 6px;
+}
+
+[data-style="modern"] .genome-invocation {
+  border-left-color: var(--modern-tf-accent);
+}
+
+/* Toast Notification in Modern Mode */
+[data-style="modern"] .toast {
+  background: var(--modern-surface);
+  color: var(--status-stopped);
+  border: 1px solid var(--status-stopped);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  backdrop-filter: none;
+}
+
+@media (max-width: 1024px), (max-height: 680px) {
+  [data-style="modern"] .dashboard-container {
+    height: auto;
+    min-height: 100vh;
+  }
+}

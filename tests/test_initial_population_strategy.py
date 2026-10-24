@@ -1,6 +1,6 @@
 import pytest
+from experiments.float_genome import FloatGenome
 
-from genai_opt.experiments.float_genome import FloatGenome
 from genai_opt.optimizer_engine.initial_population import (
     cycle_seeds_initial_population,
     cycle_seeds_initial_population_strategy,

@@ -2,7 +2,8 @@
 
 import asyncio
 
-from genai_opt.experiments.float_genome import FloatGenome
+from experiments.float_genome import FloatGenome
+
 from genai_opt.optimizer_engine.genome import Genome
 from genai_opt.optimizer_engine.population import Population
 from genai_opt.optimizer_engine.reproduction_policy.parent_selection import (

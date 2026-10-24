@@ -3,8 +3,7 @@
 import asyncio
 
 import pytest
-
-from genai_opt.experiments.float_genome import FloatGenome
+from experiments.float_genome import FloatGenome
 
 
 def _invoke_and_evaluate(genome: FloatGenome) -> None:

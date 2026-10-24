@@ -1,3 +1,5 @@
+"""How parents are chosen and how they produce the next generation."""
+
 from genai_opt.optimizer_engine.reproduction_policy.parent_selection import (
     rank_selection,
     roulette_wheel_selection,

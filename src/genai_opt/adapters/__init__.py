@@ -1,3 +1,10 @@
+"""Ready-made genomes that connect the engine to concrete GenAI tasks.
+
+An adapter supplies the four genome operations (invoke, evaluate, mutate,
+crossover) for one kind of optimization target, so an experiment only has to
+describe its task rather than implement a genome from scratch.
+"""
+
 from genai_opt.adapters.simple_system_prompt_genome import (
     EvaluationScore,
     InvSchema,
