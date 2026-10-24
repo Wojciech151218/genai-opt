@@ -1,0 +1,11 @@
+prune tests
+prune experiments
+prune dashboard
+prune docs
+prune .github
+prune .checkpoints
+prune .venv
+recursive-exclude * __pycache__
+recursive-exclude * *.py[cod]
+recursive-exclude * .pytest_cache
+recursive-exclude * .ruff_cache

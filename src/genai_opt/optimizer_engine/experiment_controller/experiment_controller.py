@@ -24,6 +24,9 @@ class ExperimentController(ABC):
     async def setup(self) -> None:
         raise NotImplementedError("ExperimentController.setup() is not implemented")
 
+    async def teardown(self) -> None:
+        return None
+
     @abstractmethod
     async def control_iteration(self, iteration_metadata: IterationMetadata) -> None:
         raise NotImplementedError("ExperimentController.control_iteration() is not implemented")

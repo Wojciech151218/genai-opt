@@ -4,12 +4,24 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "genai-opt"
-version = "0.1.0"
+dynamic = ["version"]
 description = "A Python library for GenAI optimization."
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.13"
-authors = []
+authors = [
+    { name = "Wojciech151218" },
+    { name = "KrzysztofZaporowski" },
+]
+keywords = ["genai", "optimization", "evolutionary", "langchain", "langgraph"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "langchain>=0.3",
     "langchain-core>=0.3",
@@ -23,9 +35,18 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "ruff>=0.15.20", "pytest-cov>=4.0", "mkdocs>=1.6", "pre-commit"]
 
+[project.urls]
+Homepage = "https://github.com/Wojciech151218/genai-opt"
+Repository = "https://github.com/Wojciech151218/genai-opt"
+Issues = "https://github.com/Wojciech151218/genai-opt/issues"
+Changelog = "https://github.com/Wojciech151218/genai-opt/blob/main/CHANGELOG.md"
+
+[tool.setuptools.dynamic]
+version = { attr = "genai_opt.__version__" }
+
 [tool.setuptools.packages.find]
-where = ["src", "."]
-include = ["genai_opt*", "experiments"]
+where = ["src"]
+include = ["genai_opt*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import select
 import sys
 import termios
@@ -42,6 +43,13 @@ class TerminalController(ExperimentController):
     async def setup(self) -> None:
         if self.listen_for_pause:
             self._listener_task = asyncio.create_task(self._listen_for_pause_key())
+
+    async def teardown(self) -> None:
+        if self._listener_task is not None:
+            self._listener_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._listener_task
+            self._listener_task = None
 
     async def control_iteration(self, iteration_metadata: IterationMetadata[P, Inv]) -> None:
         phase = iteration_metadata.phase.value if iteration_metadata.phase is not None else "unknown"

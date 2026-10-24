@@ -191,3 +191,4 @@ class Engine(Generic[P, Inv]):
                 from genai_opt.optimizer_engine.dashboard import stop_dashboard_ui
 
                 stop_dashboard_ui(ui_process)
+            await self.experiment_controller.teardown()
