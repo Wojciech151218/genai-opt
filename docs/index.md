@@ -32,7 +32,7 @@ pytest
 ```
 
 ```python
-from genai_opt.experiments.simple_experiment import run_simple_experiment
+from experiments.simple_experiment import run_simple_experiment
 
 population = run_simple_experiment(iterations=10, checkpoint_dir=None)
 best_genome, best_fitness = max(population.get_genome_fitness(), key=lambda item: item[1])

@@ -10,13 +10,12 @@ from genai_opt.adapters.simple_system_prompt_genome import (
     mutate_prompt_function,
 )
 from genai_opt.adapters.simple_system_prompt_genome.helpers import llm_to_config
-from genai_opt.experiments.float_genome import FloatGenome
-from genai_opt.experiments.haiku_experiment import HaikuOutput, evaluate_haiku_function
+from experiments.float_genome import FloatGenome
+from experiments.haiku_experiment import HaikuOutput, evaluate_haiku_function
 from genai_opt.optimizer_engine.checkpointer.filesystem import FilesystemCheckpointer
 from genai_opt.optimizer_engine.engine_state import EngineState, IterationPhase
 from genai_opt.optimizer_engine.genome import Genome
 from genai_opt.optimizer_engine.iteration_metadata import IterationMetadata
-from genai_opt.optimizer_engine.operation import Operation
 from genai_opt.optimizer_engine.population import Population
 
 
@@ -41,8 +40,8 @@ class _StubChatModel(BaseChatModel):
 
 
 def _stub_evaluate():
-    async def evaluate(_invocation: HaikuOutput) -> Operation[float]:
-        return Operation(1.0)
+    async def evaluate(_invocation: HaikuOutput) -> float:
+        return 1.0
 
     return evaluate
 

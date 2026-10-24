@@ -14,7 +14,7 @@ from langchain_core.messages import HumanMessage
 
 from fakes import MALFORMED_HAIKU, FakeChatModel
 from genai_opt.adapters.simple_system_prompt_genome.types import SimpleSystemPromptPhenotype
-from genai_opt.experiments.haiku_experiment import (
+from experiments.haiku_experiment import (
     SEED_SYSTEM_PROMPTS,
     HaikuOutput,
     build_haiku_experiment,

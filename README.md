@@ -31,9 +31,9 @@ pre-commit install
 ## Usage
 
 ```python
-from genai_opt.experiments.simple_experiment import run_simple_experiment
+from experiments.simple_experiment import run_simple_experiment
 
-population = run_simple_experiment(iterations=10, checkpoint_dir=None)
+population = run_simple_experiment(iterations=10, checkpoint_db=None)
 best_genome, best_fitness = max(population.get_genome_fitness(), key=lambda item: item[1])
 print(best_genome.phenotype, best_fitness)
 ```
@@ -43,7 +43,7 @@ writing your own genome, resuming from checkpoints, and optimizing LLM prompts.
 
 ## Development
 
-See [dev-guide.md](dev-guide.md) for the development workflow and [git-versioning-guide.md](git-versioning-guide.md) for branching, commits, and releases.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for branching, commits, PRs, versioning, and releases.
 
 This project uses modern Python tooling:
 - **Ruff**: For lightning-fast linting and formatting.

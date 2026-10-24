@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Generic
+from typing import Generic, Self
 
 from genai_opt.optimizer_engine.checkpointer import Checkpointer, NullCheckpointer
 from genai_opt.optimizer_engine.engine import Engine
@@ -50,6 +50,12 @@ class ExperimentBuilder(Generic[P, Inv]):
         self.reproduction_policy = reproduction_policy
         self.checkpointer = checkpointer or NullCheckpointer()
         self.experiment_controller = experiment_controller or NullExperimentController()
+        self._launch_ui = False
+
+    def start_dashboard(self) -> Self:
+        """Launch the web dashboard when the built engine's :meth:`~Engine.run` starts."""
+        self._launch_ui = True
+        return self
 
     def build(self) -> Engine[P, Inv]:
         """Create generation zero and return an engine configured to run it.
@@ -60,7 +66,7 @@ class ExperimentBuilder(Generic[P, Inv]):
         Returns:
             A ready-to-run engine.
         """
-        return Engine(
+        engine = Engine(
             self.inital_population_strategy(),
             self.convergence_criterion,
             self.mutation_policy,
@@ -68,3 +74,6 @@ class ExperimentBuilder(Generic[P, Inv]):
             self.checkpointer,
             self.experiment_controller,
         )
+        if self._launch_ui:
+            engine.start_dashboard()
+        return engine

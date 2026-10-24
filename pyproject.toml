@@ -7,7 +7,8 @@ name = "genai-opt"
 dynamic = ["version"]
 description = "Evolutionary optimization for GenAI systems, including LLM prompts."
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 # Collective, matching LICENSE. Naming individuals here would either publish
 # personal addresses or, for a contributor without a public one, single someone
@@ -23,10 +24,9 @@ keywords = [
     "prompt-optimization",
 ]
 classifiers = [
-    "Development Status :: 5 - Production/Stable",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
@@ -42,7 +42,9 @@ dependencies = [
     "langchain-core>=0.3",
     "langchain-openai>=0.3",
     "langgraph>=0.2",
+    "pydantic>=2.0.0",
     "python-dotenv>=1.2.2",
+    "websockets>=12.0",
 ]
 
 [project.urls]
@@ -72,17 +74,19 @@ version = { attr = "genai_opt.__version__" }
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["genai_opt*"]
 
 [tool.setuptools.package-data]
 genai_opt = ["py.typed"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src", "."]
 
 [tool.ruff]
 target-version = "py311"
 line-length = 120
-src = ["src", "tests"]
+src = ["src", "experiments", "tests"]
 
 [tool.ruff.lint]
 select = [
@@ -116,6 +120,7 @@ convention = "google"
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D"]
+"experiments/**" = ["D"]
 
 [tool.coverage.run]
 source = ["src"]

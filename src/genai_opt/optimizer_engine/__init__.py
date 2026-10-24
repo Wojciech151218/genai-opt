@@ -10,6 +10,7 @@ from genai_opt.optimizer_engine.checkpointer import (
     Checkpointer,
     FilesystemCheckpointer,
     NullCheckpointer,
+    SqliteCheckpointer,
 )
 from genai_opt.optimizer_engine.convergence_criterion import (
     iteration_limited_convergence,
@@ -22,6 +23,7 @@ from genai_opt.optimizer_engine.experiment_controller import (
     KeyReader,
     NullExperimentController,
     TerminalController,
+    WebSocketExperimentController,
     create_key_reader,
 )
 from genai_opt.optimizer_engine.genome import Genome
@@ -59,8 +61,10 @@ __all__ = [
     "Operation",
     "Population",
     "ReproductionPolicy",
+    "SqliteCheckpointer",
     "TerminalController",
     "TerminalLoggerMetricsCollector",
+    "WebSocketExperimentController",
     "create_key_reader",
     "cycle_seeds_initial_population",
     "cycle_seeds_initial_population_strategy",

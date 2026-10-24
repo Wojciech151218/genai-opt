@@ -19,7 +19,7 @@ from genai_opt.adapters.simple_system_prompt_genome.types import (
     EvaluationScore,
     SystemPromptMutation,
 )
-from genai_opt.experiments.haiku_experiment import HaikuEvaluation, HaikuOutput
+from experiments.haiku_experiment import HaikuEvaluation, HaikuOutput
 
 VALID_HAIKU = HaikuOutput(
     line_one="An old silent pond",

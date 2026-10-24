@@ -76,11 +76,11 @@ the compatibility promise.
 
 ## Example Experiments
 
-::: genai_opt.experiments.float_genome.FloatGenome
+::: experiments.float_genome.FloatGenome
 
-::: genai_opt.experiments.simple_experiment
+::: experiments.simple_experiment
 
-::: genai_opt.experiments.haiku_experiment
+::: experiments.haiku_experiment
 
 ## Environment
 

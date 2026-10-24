@@ -13,7 +13,7 @@ Three options, in the order they are consulted:
    providers other than the default.
 
 ```python
-from genai_opt.experiments.haiku_experiment import build_haiku_experiment
+from experiments.haiku_experiment import build_haiku_experiment
 
 engine = build_haiku_experiment(my_chat_model, iterations=3).build()
 ```
@@ -76,5 +76,5 @@ Pass a stub chat model to `build_haiku_experiment` instead of calling
 `run_haiku_experiment`. Because every genome operation is injected as a function,
 no real provider is required — this is exactly how the test suite exercises the
 LLM-backed paths. For engine behavior unrelated to prompts, use
-[`FloatGenome`](api.md#genai_opt.experiments.float_genome.FloatGenome), which needs
+[`FloatGenome`](api.md#experiments.float_genome.FloatGenome), which needs
 no network access at all.

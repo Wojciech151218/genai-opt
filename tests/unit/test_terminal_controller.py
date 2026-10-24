@@ -63,7 +63,7 @@ for name in ("termios", "tty", "fcntl"):
     sys.modules[name] = None
 
 from genai_opt.optimizer_engine.experiment_controller import TerminalController
-from genai_opt.experiments.simple_experiment import build_simple_experiment
+from experiments.simple_experiment import build_simple_experiment
 
 print("imported")
 """

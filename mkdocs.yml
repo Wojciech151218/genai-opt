@@ -13,6 +13,9 @@ nav:
   - LLM Credentials and Cost: llm-credentials-and-cost.md
   - API Reference: api.md
   - API Stability: api-stability.md
+  - SQLite Checkpointer: sqlite-checkpointer.md
+  - WebSocket Controller: websocket-controller.md
+  - Web Dashboard: web-dashboard.md
   - Development: development.md
   - Releasing: releasing.md
 

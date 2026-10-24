@@ -18,6 +18,7 @@ from genai_opt.optimizer_engine.experiment_controller.key_reader import (
     create_key_reader,
 )
 from genai_opt.optimizer_engine.experiment_controller.terminal_controller import TerminalController
+from genai_opt.optimizer_engine.experiment_controller.websocket_controller import WebSocketExperimentController
 
 __all__ = [
     "ExperimentController",
@@ -26,6 +27,7 @@ __all__ = [
     "NullKeyReader",
     "PosixKeyReader",
     "TerminalController",
+    "WebSocketExperimentController",
     "WindowsKeyReader",
     "create_key_reader",
 ]

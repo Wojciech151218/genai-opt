@@ -62,6 +62,7 @@ class Engine(Generic[P, Inv]):
         self.mutation_policy = mutation_policy
         self.checkpointer = checkpointer or NullCheckpointer()
         self.experiment_controller = experiment_controller or NullExperimentController()
+        self._launch_ui = False
 
     @property
     def population(self) -> Population[P, Inv]:
@@ -182,6 +183,11 @@ class Engine(Generic[P, Inv]):
     def _save_checkpoint(self, metadata: IterationMetadata[P, Inv]) -> None:
         self.checkpointer.save_checkpoint(self._state, metadata)
 
+    def start_dashboard(self) -> Self:
+        """Launch the web dashboard when :meth:`run` starts."""
+        self._launch_ui = True
+        return self
+
     async def step(self) -> IterationMetadata[P, Inv]:
         """Execute and persist one phase of the current iteration.
 
@@ -247,6 +253,12 @@ class Engine(Generic[P, Inv]):
         return asyncio.run(self._run_async())
 
     async def _run_async(self) -> Population[P, Inv]:
+        ui_process = None
+        if self._launch_ui:
+            from genai_opt.optimizer_engine.dashboard import start_dashboard_ui
+
+            ui_process = start_dashboard_ui()
+
         await self.experiment_controller.setup()
         try:
             while self._state.phase is not IterationPhase.EVALUATE_POPULATION or not self.convergence_criterion(
@@ -256,3 +268,7 @@ class Engine(Generic[P, Inv]):
             return self.population
         finally:
             await self.experiment_controller.teardown()
+            if ui_process:
+                from genai_opt.optimizer_engine.dashboard import stop_dashboard_ui
+
+                stop_dashboard_ui(ui_process)

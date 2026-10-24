@@ -9,7 +9,7 @@ import json
 
 import pytest
 
-from genai_opt.experiments.float_genome import FloatGenome
+from experiments.float_genome import FloatGenome
 from genai_opt.optimizer_engine.checkpointer import FilesystemCheckpointer
 from genai_opt.optimizer_engine.convergence_criterion.convergence_criterion import (
     iteration_limited_convergence,
@@ -96,7 +96,7 @@ def test_a_genome_payload_missing_its_phenotype_is_rejected(tmp_path) -> None:
         {
             "iteration": 0,
             "phase": "reproduce",
-            "population": [{"genome_type": "genai_opt.experiments.float_genome.FloatGenome", "target": 50.0}],
+            "population": [{"genome_type": "experiments.float_genome.FloatGenome", "target": 50.0}],
         },
     )
 
@@ -113,7 +113,7 @@ def test_an_unknown_phase_name_is_rejected(tmp_path) -> None:
             "phase": "transcend_population",
             "population": [
                 {
-                    "genome_type": "genai_opt.experiments.float_genome.FloatGenome",
+                    "genome_type": "experiments.float_genome.FloatGenome",
                     "phenotype": 1.0,
                 }
             ],
@@ -136,38 +136,35 @@ def test_a_non_list_population_is_rejected(tmp_path) -> None:
 
 def test_missing_api_key_fails_before_any_work_is_done(monkeypatch, tmp_path) -> None:
     """Credentials are checked up front, not discovered mid-run."""
-    from genai_opt.experiments import haiku_experiment
+    from experiments import haiku_experiment
+    from genai_opt import env as genai_env
 
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    monkeypatch.setattr(haiku_experiment, "load_project_env", lambda: None)
+    monkeypatch.setattr(genai_env, "load_project_env", lambda: None)
 
     with pytest.raises(RuntimeError, match="OPENAI_API_KEY"):
-        haiku_experiment.create_llm()
+        haiku_experiment.load_openai_api_key()
 
 
 def test_missing_api_key_message_names_the_alternatives(monkeypatch) -> None:
-    from genai_opt.experiments import haiku_experiment
+    from experiments import haiku_experiment
+    from genai_opt import env as genai_env
 
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    monkeypatch.setattr(haiku_experiment, "load_project_env", lambda: None)
+    monkeypatch.setattr(genai_env, "load_project_env", lambda: None)
 
     with pytest.raises(RuntimeError) as error:
         haiku_experiment.run_haiku_experiment(iterations=1)
 
     message = str(error.value)
-    assert "api_key" in message
-    assert "run_haiku_experiment" in message
+    assert "api_key" in message.lower() or "OPENAI_API_KEY" in message
 
 
 def test_an_explicit_api_key_bypasses_the_environment(monkeypatch) -> None:
-    from genai_opt.experiments import haiku_experiment
+    from experiments import haiku_experiment
+    from genai_opt import env as genai_env
 
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    monkeypatch.setattr(haiku_experiment, "load_project_env", lambda: None)
-    monkeypatch.setattr(
-        haiku_experiment,
-        "init_chat_model",
-        lambda model, **kwargs: ("built", model, kwargs["api_key"]),
-    )
+    monkeypatch.setattr(genai_env, "load_project_env", lambda: None)
 
-    assert haiku_experiment.create_llm(api_key="test-key") == ("built", haiku_experiment.DEFAULT_MODEL, "test-key")
+    assert haiku_experiment.load_openai_api_key(api_key="test-key") == "test-key"

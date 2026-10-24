@@ -2,7 +2,7 @@
 
 import asyncio
 
-from genai_opt.experiments.float_genome import FloatGenome
+from experiments.float_genome import FloatGenome
 from genai_opt.optimizer_engine.iteration_metadata import IterationMetadata
 from genai_opt.optimizer_engine.metrics_collector.terminal_logger import (
     TerminalLoggerMetricsCollector,

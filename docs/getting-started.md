@@ -24,7 +24,7 @@ The simplest experiment evolves float values toward a target. It needs no
 credentials and no network access.
 
 ```python
-from genai_opt.experiments.simple_experiment import run_simple_experiment
+from experiments.simple_experiment import run_simple_experiment
 
 population = run_simple_experiment(
     target=50.0,
@@ -53,7 +53,7 @@ handed to `ExperimentBuilder`: where the first generation comes from, when to
 stop, which offspring to mutate, and how to reproduce.
 
 ```python
-from genai_opt.experiments.float_genome import FloatGenome
+from experiments.float_genome import FloatGenome
 from genai_opt.optimizer_engine import (
     ExperimentBuilder,
     Population,

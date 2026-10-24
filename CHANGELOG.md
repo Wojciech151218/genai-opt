@@ -5,16 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.0] - 2026-07-28
+## [0.3.0] - 2026-10-24
 
-First release published to PyPI, and the point from which the public API is
-covered by semantic versioning. See [API stability](docs/api-stability.md) for
-what that commits us to.
+Public 0.3 release: the engine and packaging baseline from the former
+`release/1.0` line, plus the web dashboard, WebSocket controller, and SQLite
+checkpointer. See [API stability](docs/api-stability.md) for what the public
+API commits us to.
 
 The 0.1.0 entry below described only a project scaffold and was never updated,
 so this entry covers everything the library actually does.
 
 ### Added
+
+- **Web dashboard.** Optional React UI for live experiment monitoring and a
+  SQLite Database Explorer, launched via `Engine.start_dashboard()` /
+  `ExperimentBuilder.start_dashboard()`.
+- **WebSocket controller.** `WebSocketExperimentController` streams phases and
+  operations to connected clients and accepts pause/resume commands.
+- **SQLite checkpointer.** `SqliteCheckpointer` persists engine state and
+  history in a local database for resume and exploration.
+- **Root `experiments/` package.** Example runners live at the project root
+  rather than inside the installable package.
 
 - **Optimizer engine.** `Engine` runs a genetic algorithm over a `Population` of
   `Genome` objects. Each iteration is split into five explicit phases — evaluate
@@ -79,7 +90,7 @@ so this entry covers everything the library actually does.
 ### Removed
 
 - `EngineConfig`, a mutable global singleton that nothing imported and whose only
-  field was never read. Removed rather than frozen into the 1.0 API.
+  field was never read. Removed rather than frozen into the public API.
 
 ## [0.1.0] - 2026-07-01
 
