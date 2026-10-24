@@ -1,32 +1,58 @@
-# Web Dashboard (Liquid Glass)
+# Web Dashboard
 
-The Web Dashboard is an interactive, real-time React application used to monitor and control the evolutionary algorithm engine remotely.
+The Web Dashboard is an interactive React application used to monitor and control active evolutionary optimization runs in real time as well as inspect historical experiments stored in SQLite checkpoint databases.
 
 ## Architecture & Technology
 
-The dashboard resides in the `dashboard/` directory and is built using modern web development standards:
-- **React**: For declarative, component-driven UI.
-- **Vite**: As a fast development server and build tool.
-- **Native WebSockets**: For real-time telemetry streaming from the Python engine.
-- **Lucide React**: For scalable, premium vector icons.
+The dashboard resides in the `dashboard/` directory and connects to two lightweight local Python services:
 
-## Design Aesthetic: Liquid Glass
+- **React + Vite**: Component-driven UI with fast development HMR and `/api` proxy support.
+- **Native WebSockets (`ws://localhost:8765`)**: Two-way telemetry and control channel (`pause` / `resume`) powered by `WebSocketExperimentController`.
+- **SQLite History HTTP API (`http://localhost:8766/api`)**: Zero-dependency read-only JSON server (`DashboardAPIServer`) exposing `.checkpoints/*.db` history.
+- **Lucide React**: Scalable vector icons.
 
-The UI implements a premium "Liquid Glass" (glassmorphism) design system to provide an immersive user experience:
-- **Floating Orbs**: Abstract, glowing spheres in the background visually encode the engine's state (Green/Blue for running, Amber for paused, Crimson for offline/stopped).
-- **Glass Panels**: Frosted, translucent panels (`backdrop-filter: blur()`) house the telemetry and controls.
-- **Dynamic Feedback**: Operations smoothly slide into the feed, and error/offline states trigger floating toast notifications.
+## Interface Styles & Themes
 
-## Connecting to the Engine
+The header includes an instant style switcher (`data-style`) and a Dark/Light theme toggle (`data-theme`), giving users **4 visual combinations** persisted automatically in `localStorage`:
 
-The React application connects automatically to `ws://localhost:8765`. 
-If the Python engine is not running, the dashboard transitions into a graceful "Engine Offline" state, preventing the user from sending dead commands.
+1. **Liquid Glass (`glass`)**: Immersive glassmorphism layout featuring translucent frosted panels (`backdrop-filter: blur()`), dynamic ambient background orbs reflecting engine state, and smooth card transitions similar to macOS and iOS systems theme.
+2. **Modern Developer (`modern`)**: Clean, full-bleed analytical workspace inspired by Google Colab, Google Drive, and TensorBoard — flat surfaces, hairline borders, zero GPU blur or decorative animations, Google Blue / TensorFlow Amber accents, and `JetBrains Mono` code cells for `Phenotype (JSON)` and `Invocation Output`.
+
+## Views & Capabilities
+
+### 1. Live Monitor
+
+- **Engine Controls**: Pause (`pausing` -> `paused`) and resume active optimization runs safely between phases/operations.
+- **Live Telemetry**: Displays active iteration, population size, and human-readable phase names.
+- **Structured Population Cards**: Renders each genome's `Fitness` badge, formatted `Phenotype (JSON)`, and `Invocation Output` live.
+- **Operations Feed**: Streams individual genome/LLM operations and execution durations.
+
+### 2. Database Explorer
+
+- **Database & Experiment Discovery**: Automatically lists `.db` files in `.checkpoints/` (or accepts a custom SQLite file path) and summarizes stored experiments (`Peak Fitness`, `Total Tokens`, checkpoint count).
+- **Checkpoints Timeline**: Chronological phase-by-phase history with fitness highlights and timestamps.
+- **Saved Population & Offspring Inspection**: Displays step-level metrics (`Best / Mean / Worst Fitness`, `Step Tokens`, `Duration`) and lets you switch between `Parents` and `Offspring` snapshots.
+- **Phase Operations**: Lists recorded LLM operations with model names and `tokens_in` / `tokens_out` breakdowns.
 
 ## Running the Dashboard
 
-To launch the dashboard locally for development:
-```bash
-cd dashboard
-npm install
-npm run dev
+### Automatically with an Experiment
+
+Call `.start_dashboard()` on `ExperimentBuilder` so `Engine.run()` starts and stops both the Vite UI and the SQLite History API automatically:
+
+```python
+builder = build_haiku_experiment(llm)
+builder.start_dashboard()
+engine = builder.build().from_checkpoint()
+await engine.run()
 ```
+
+### Standalone Mode (Browsing Saved Databases Without Running an Engine)
+
+Launch the dashboard and SQLite History API server directly without invoking any LLM calls:
+
+```bash
+PYTHONPATH=src python3 -m genai_opt.optimizer_engine.dashboard
+```
+
+Then open `http://localhost:5173` in your browser.

@@ -14,6 +14,7 @@ from genai_opt.optimizer_engine.experiment_controller.websocket_protocol import 
 )
 from genai_opt.optimizer_engine.iteration_metadata import IterationMetadata
 from genai_opt.optimizer_engine.operation import Operation
+from genai_opt.optimizer_engine.serialization import serialize_value
 
 
 class WebSocketExperimentController(ExperimentController):
@@ -31,6 +32,7 @@ class WebSocketExperimentController(ExperimentController):
         self._server = None
         self._resume_event = asyncio.Event()
         self._resume_event.set()
+        self._last_iteration_message: ServerIterationMessage | None = None
 
     def pause(self) -> None:
         super().pause()
@@ -53,6 +55,8 @@ class WebSocketExperimentController(ExperimentController):
     async def _handler(self, websocket: Any) -> None:
         self._clients.add(websocket)
         try:
+            if self._last_iteration_message is not None:
+                await websocket.send(self._last_iteration_message.model_dump_json())
             async for message in websocket:
                 try:
                     data = ClientCommandMessage.model_validate_json(message)
@@ -77,14 +81,31 @@ class WebSocketExperimentController(ExperimentController):
         if self.is_paused():
             await self._resume_event.wait()
 
+    @staticmethod
+    def _serialize_phenotype(phenotype: Any) -> Any:
+        data = serialize_value(phenotype)
+        if isinstance(data, dict) and "llm" in data and "system_prompt" in data:
+            return {k: v for k, v in data.items() if k != "llm"}
+        return data
+
     async def control_iteration(self, iteration_metadata: IterationMetadata) -> None:
-        await self._broadcast(
-            ServerIterationMessage(
-                iteration=iteration_metadata.iteration,
-                phase=iteration_metadata.phase.value if iteration_metadata.phase else "UNKNOWN",
-                population_size=len(iteration_metadata.phenotype_states),
-            )
+        population_json = [
+            {
+                "id": f"genome_{idx + 1}",
+                "phenotype": self._serialize_phenotype(state.phenotype),
+                "fitness": state.fitness,
+                "invocation": serialize_value(state.invocation),
+            }
+            for idx, state in enumerate(iteration_metadata.phenotype_states)
+        ]
+        msg = ServerIterationMessage(
+            iteration=iteration_metadata.iteration,
+            phase=iteration_metadata.phase.value if iteration_metadata.phase else "UNKNOWN",
+            population_size=len(iteration_metadata.phenotype_states),
+            population_json=population_json,
         )
+        self._last_iteration_message = msg
+        await self._broadcast(msg)
         await self._wait_if_paused()
 
     async def control_operation(self, iteration: int, phase: IterationPhase, operation: Operation) -> None:

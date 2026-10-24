@@ -1,6 +1,6 @@
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ClientCommandMessage(BaseModel):
@@ -23,6 +23,7 @@ class ServerIterationMessage(BaseModel):
     iteration: int
     phase: str
     population_size: int = 0
+    population_json: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class ServerOperationMessage(BaseModel):

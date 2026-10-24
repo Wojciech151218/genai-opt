@@ -1,10 +1,41 @@
 import { useEffect, useState, useRef } from 'react';
-import { Play, Pause, Activity, Wifi, WifiOff, Sun, Moon } from 'lucide-react';
+import {
+  Play,
+  Pause,
+  Activity,
+  Wifi,
+  WifiOff,
+  Sun,
+  Moon,
+  Database,
+  Sparkles,
+  Terminal,
+} from 'lucide-react';
+import DatabaseExplorer from './DatabaseExplorer';
 import './index.css';
+import './modern-developer.css';
+
+function getInitialPreference(key, fallback, allowed) {
+  try {
+    const saved = window.localStorage.getItem(key);
+    if (saved && allowed.includes(saved)) {
+      return saved;
+    }
+  } catch {
+    // Ignore storage errors in restricted environments
+  }
+  return fallback;
+}
 
 function App() {
+  const [activeView, setActiveView] = useState('live');
   const [status, setStatus] = useState('stopped');
-  const [theme, setTheme] = useState('dark');
+  const [theme, setTheme] = useState(() =>
+    getInitialPreference('genai-opt-theme', 'dark', ['dark', 'light'])
+  );
+  const [uiStyle, setUiStyle] = useState(() =>
+    getInitialPreference('genai-opt-style', 'glass', ['glass', 'modern'])
+  );
   const [isConnected, setIsConnected] = useState(false);
   const [toastMessage, setToastMessage] = useState(null);
   const [metrics, setMetrics] = useState({
@@ -21,7 +52,12 @@ function App() {
     const mapping = {
       'evaluate_offspring': 'Offspring Evaluation',
       'evaluate_population': 'Population Evaluation',
+      'reproduce': 'Reproduction',
+      'mutate': 'Mutation',
+      'replace': 'Replacement',
       'crossover': 'Crossover Phase',
+      'invoke': 'Genome Invocation',
+      'evaluate': 'Genome Evaluation',
       'mutate_genome': 'Genome Mutation',
       'evaluate_genome': 'Genome Evaluation',
       'llm_generate_haiku': 'LLM Haiku Generation',
@@ -82,7 +118,21 @@ function App() {
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
+    try {
+      window.localStorage.setItem('genai-opt-theme', theme);
+    } catch {
+      // Ignore storage errors
+    }
   }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-style', uiStyle);
+    try {
+      window.localStorage.setItem('genai-opt-style', uiStyle);
+    } catch {
+      // Ignore storage errors
+    }
+  }, [uiStyle]);
 
   const showToast = (msg) => {
     setToastMessage(msg);
@@ -100,7 +150,7 @@ function App() {
   };
 
   return (
-    <div className={`state-${status}`} style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+    <div className={`app-shell state-${status}`}>
       {/* Background Liquid Orbs */}
       <div className="orb orb-1"></div>
       <div className="orb orb-2"></div>
@@ -115,15 +165,34 @@ function App() {
       <div className="dashboard-container glass-panel">
         <header className="header">
           <div className="title" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-             <Activity size={28} color="var(--primary-glow)" /> GenAI Opt // Control Dashboard
+             <Activity size={26} className="brand-icon" /> GenAI Opt // Control Dashboard
           </div>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          <div className="header-actions">
+            <div className="style-switcher" role="group" aria-label="Interface style">
+              <button
+                type="button"
+                className={`style-switch-btn ${uiStyle === 'glass' ? 'active' : ''}`}
+                onClick={() => setUiStyle('glass')}
+                title="Liquid Glass interface"
+              >
+                <Sparkles size={14} /> Liquid Glass
+              </button>
+              <button
+                type="button"
+                className={`style-switch-btn ${uiStyle === 'modern' ? 'active' : ''}`}
+                onClick={() => setUiStyle('modern')}
+                title="Modern Developer workspace interface"
+              >
+                <Terminal size={14} /> Modern Developer
+              </button>
+            </div>
+
             <button 
-              className="btn" 
-              style={{ padding: '8px', borderRadius: '50%' }}
+              type="button"
+              className="btn theme-toggle-btn" 
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              title="Toggle Theme"
+              title="Toggle Dark / Light Theme"
             >
               {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
             </button>
@@ -141,76 +210,140 @@ function App() {
           </div>
         </header>
 
-        <div className="controls">
-          <button 
-            className="btn" 
-            onClick={() => sendCommand('resume')}
-            style={{ opacity: (status !== 'paused' && isConnected) ? 0.5 : 1 }}
-          >
-            <Play size={18} /> Resume
-          </button>
-          <button 
-            className="btn" 
-            onClick={() => {
-              if (status === 'running') {
-                setStatus('pausing');
-                sendCommand('pause');
-              }
-            }}
-            style={{ opacity: (status !== 'running' && isConnected) ? 0.5 : 1 }}
-          >
-            <Pause size={18} /> {status === 'pausing' ? 'Pausing...' : 'Pause'}
-          </button>
+        <div className="top-bar-row">
+          <div className="nav-tabs" role="tablist" aria-label="Dashboard views">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeView === 'live'}
+              className={`nav-tab ${activeView === 'live' ? 'active' : ''}`}
+              onClick={() => setActiveView('live')}
+            >
+              <Activity size={16} /> Live Monitor
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeView === 'database'}
+              className={`nav-tab ${activeView === 'database' ? 'active' : ''}`}
+              onClick={() => setActiveView('database')}
+            >
+              <Database size={16} /> Database Explorer
+            </button>
+          </div>
+
+          {activeView === 'live' && (
+            <div className="controls">
+              <button 
+                className="btn" 
+                onClick={() => sendCommand('resume')}
+                style={{ opacity: (status !== 'paused' && isConnected) ? 0.5 : 1 }}
+              >
+                <Play size={18} /> Resume
+              </button>
+              <button 
+                className="btn" 
+                onClick={() => {
+                  if (status === 'running') {
+                    setStatus('pausing');
+                    sendCommand('pause');
+                  }
+                }}
+                style={{ opacity: (status !== 'running' && isConnected) ? 0.5 : 1 }}
+              >
+                <Pause size={18} /> {status === 'pausing' ? 'Pausing...' : 'Pause'}
+              </button>
+            </div>
+          )}
         </div>
 
-        <div className="main-grid">
-          <div className="metrics-panel glass-panel">
-            <h2 className="panel-title">Engine Live State</h2>
-            <div className="metrics-grid">
-              <div className="metric-card">
-                <div className="metric-label">Current Iteration</div>
-                <div className="metric-value">{metrics.iteration}</div>
-              </div>
-              <div className="metric-card">
-                <div className="metric-label">Population Size</div>
-                <div className="metric-value">{metrics.populationSize}</div>
-              </div>
-              <div className="metric-card" style={{ gridColumn: '1 / -1' }}>
-                <div className="metric-label">Active Phase</div>
-                <div className="metric-value" style={{ color: 'var(--primary-glow)' }}>{formatName(metrics.phase)}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="population-panel glass-panel">
-            <h2 className="panel-title">Population State</h2>
-            <div className="population-content">
-              {populationJson ? JSON.stringify(populationJson, null, 2) : 'Awaiting population data...'}
-            </div>
-          </div>
-
-          <div className="operations-panel glass-panel">
-            <h2 className="panel-title">Live Operations Feed</h2>
-            <div className="operations-list">
-              {operations.map((op, idx) => (
-                <div key={idx} className="operation-card">
-                  <div className="op-header">
-                    <span className="op-kind">{formatName(op.operation_kind)}</span>
-                    <span className="op-phase">{formatName(op.phase)}</span>
-                  </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    Iter: {op.iteration} | Duration: {op.duration ? op.duration.toFixed(2) : '-'}s
-                  </div>
+        {activeView === 'live' ? (
+          <div className="main-grid">
+            <div className="metrics-panel glass-panel">
+              <h2 className="panel-title">Engine Live State</h2>
+              <div className="metrics-grid">
+                <div className="metric-card">
+                  <div className="metric-label">Current Iteration</div>
+                  <div className="metric-value">{metrics.iteration}</div>
                 </div>
-              ))}
-              {operations.length === 0 && (
-                <div style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: '40px' }}>
-                  Awaiting engine telemetry...
+                <div className="metric-card">
+                  <div className="metric-label">Population Size</div>
+                  <div className="metric-value">{metrics.populationSize}</div>
                 </div>
-              )}
+                <div className="metric-card" style={{ gridColumn: '1 / -1' }}>
+                  <div className="metric-label">Active Phase</div>
+                  <div className="metric-value metric-phase" style={{ color: 'var(--primary-glow)' }}>{formatName(metrics.phase)}</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="population-panel glass-panel">
+              <h2 className="panel-title">Population State</h2>
+              <div className="population-list">
+                {Array.isArray(populationJson) && populationJson.length > 0 ? (
+                  populationJson.map((member, idx) => (
+                    <div key={member.id || idx} className="genome-card">
+                      <div className="genome-header">
+                        <span className="genome-id">
+                          {member.id ? formatName(String(member.id)) : `Genome #${idx + 1}`}
+                        </span>
+                        <span className={`genome-fitness ${member.fitness == null ? 'pending' : ''}`}>
+                          {member.fitness != null
+                            ? `Fitness: ${Number(member.fitness).toFixed(2)}`
+                            : 'Fitness: Pending'}
+                        </span>
+                      </div>
+                      <div className="genome-section-label">Phenotype (JSON)</div>
+                      <pre className="genome-json">
+                        {JSON.stringify(member.phenotype ?? member, null, 2)}
+                      </pre>
+                      {member.invocation != null && (
+                        <>
+                          <div className="genome-section-label" style={{ marginTop: '10px' }}>
+                            Invocation Output
+                          </div>
+                          <pre className="genome-json genome-invocation">
+                            {typeof member.invocation === 'object'
+                              ? JSON.stringify(member.invocation, null, 2)
+                              : String(member.invocation)}
+                          </pre>
+                        </>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: '40px' }}>
+                    Awaiting population data...
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="operations-panel glass-panel">
+              <h2 className="panel-title">Live Operations Feed</h2>
+              <div className="operations-list">
+                {operations.map((op, idx) => (
+                  <div key={idx} className="operation-card">
+                    <div className="op-header">
+                      <span className="op-kind">{formatName(op.operation_kind)}</span>
+                      <span className="op-phase">{formatName(op.phase)}</span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      Iter: {op.iteration} | Duration: {op.duration ? op.duration.toFixed(2) : '-'}s
+                    </div>
+                  </div>
+                ))}
+                {operations.length === 0 && (
+                  <div style={{ color: 'var(--text-secondary)', textAlign: 'center', marginTop: '40px' }}>
+                    Awaiting engine telemetry...
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          <DatabaseExplorer formatName={formatName} />
+        )}
       </div>
     </div>
   );

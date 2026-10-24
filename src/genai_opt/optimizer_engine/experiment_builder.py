@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Generic
+from typing import Generic, Self
 
 from genai_opt.optimizer_engine.checkpointer import Checkpointer, NullCheckpointer
 from genai_opt.optimizer_engine.engine import Engine
