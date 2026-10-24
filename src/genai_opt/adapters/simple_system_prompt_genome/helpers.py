@@ -18,8 +18,8 @@ from genai_opt.optimizer_engine.utils.timed_operation import AdapterResult, buil
 
 __all__ = [
     "AdapterResult",
-    "build_operation",
     "build_invoke_chat_prompt",
+    "build_operation",
     "ensure_prompt_template",
     "extract_parsed",
     "extract_score",

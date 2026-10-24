@@ -1,6 +1,7 @@
 """Tests for random_mutation."""
 
 from experiments.float_genome import FloatGenome
+
 from genai_opt.optimizer_engine.mutation_policy.mutation_policy import random_mutation
 
 

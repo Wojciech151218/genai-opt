@@ -1,6 +1,7 @@
 import asyncio
 
 from experiments.float_genome import FloatGenome
+
 from genai_opt.optimizer_engine.checkpointer import FilesystemCheckpointer
 from genai_opt.optimizer_engine.convergence_criterion.convergence_criterion import (
     iteration_limited_convergence,

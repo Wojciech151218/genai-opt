@@ -8,7 +8,6 @@ import random
 
 import websockets
 
-
 HOST = "localhost"
 PORT = 8765
 POPULATION_SIZE = 20

@@ -50,7 +50,6 @@ def load_openai_api_key(*, api_key: str | None = None) -> str:
     resolved = os.getenv(OPENAI_API_KEY_ENV)
     if not resolved:
         raise RuntimeError(
-            f"Set {OPENAI_API_KEY_ENV} in the environment or project ``.env``, "
-            "or pass api_key explicitly."
+            f"Set {OPENAI_API_KEY_ENV} in the environment or project ``.env``, or pass api_key explicitly."
         )
     return resolved

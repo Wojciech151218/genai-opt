@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from experiments.simple_experiment import build_simple_experiment, run_simple_experiment
+
 from genai_opt.optimizer_engine.checkpointer.sqlite_checkpointer import SqliteCheckpointer
 from genai_opt.optimizer_engine.engine import Engine
 from genai_opt.optimizer_engine.experiment_controller.websocket_controller import WebSocketExperimentController

@@ -9,11 +9,6 @@ serialized. None of it touches the network.
 import asyncio
 
 import pytest
-from langchain_core.exceptions import OutputParserException
-from langchain_core.messages import HumanMessage
-
-from fakes import MALFORMED_HAIKU, FakeChatModel
-from genai_opt.adapters.simple_system_prompt_genome.types import SimpleSystemPromptPhenotype
 from experiments.haiku_experiment import (
     SEED_SYSTEM_PROMPTS,
     HaikuOutput,
@@ -22,6 +17,11 @@ from experiments.haiku_experiment import (
     create_initial_population,
     haiku_checkpoint_restore_context,
 )
+from langchain_core.exceptions import OutputParserException
+from langchain_core.messages import HumanMessage
+
+from fakes import MALFORMED_HAIKU, FakeChatModel
+from genai_opt.adapters.simple_system_prompt_genome.types import SimpleSystemPromptPhenotype
 from genai_opt.optimizer_engine.checkpointer import FilesystemCheckpointer
 from genai_opt.optimizer_engine.engine_state import IterationPhase
 

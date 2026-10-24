@@ -185,28 +185,76 @@ jobs:
         # An editable install hides packaging mistakes: a module left out of the
         # wheel still imports from the working tree. Installing the built
         # artifact into a fresh venv, outside the repository, is what catches it.
+        # Example runners live in repo-only experiments/, so the smoke test
+        # exercises the public engine API with a tiny inline genome instead.
         run: |
           set -euo pipefail
           python -m venv /tmp/smoke
           /tmp/smoke/bin/pip install --upgrade pip
           /tmp/smoke/bin/pip install dist/*.whl
           /tmp/smoke/bin/pip check
-          cd /tmp
-          /tmp/smoke/bin/python -c "
+          cat > /tmp/smoke_wheel.py <<'PY'
           import importlib.resources
+          from typing import Self
 
           import genai_opt
-          from genai_opt.experiments.simple_experiment import run_simple_experiment
-          from genai_opt.optimizer_engine import Engine, ExperimentBuilder, TerminalController
+          from genai_opt.optimizer_engine import (
+              ExperimentBuilder,
+              Population,
+              ReproductionPolicy,
+              TerminalController,
+              generational_reproduction,
+              iteration_limited_convergence,
+              random_mutation,
+              tournament_selection,
+          )
+          from genai_opt.optimizer_engine.genome import Genome
+          from genai_opt.optimizer_engine.operation import Operation
 
-          assert importlib.resources.files('genai_opt').joinpath('py.typed').is_file(), 'py.typed missing from wheel'
+          assert importlib.resources.files("genai_opt").joinpath("py.typed").is_file(), "py.typed missing from wheel"
 
-          population = run_simple_experiment(iterations=2, population_size=4, checkpoint_dir=None)
-          best, fitness = max(population.get_genome_fitness(), key=lambda item: item[1])
+
+          class SmokeGenome(Genome[float, float]):
+              def __init__(self, phenotype: float, target: float = 50.0):
+                  super().__init__(phenotype)
+                  self.target = target
+
+              async def invoke(self) -> Operation[float]:
+                  return Operation(self.phenotype)
+
+              async def evaluate(self) -> Operation[float]:
+                  return Operation(100.0 - abs(self.invocation - self.target))
+
+              async def mutate(self) -> Operation[Self]:
+                  return Operation(SmokeGenome(self.phenotype + 1.0, target=self.target))
+
+              async def crossover(self, other: Self) -> Operation[Self]:
+                  mid = (self.phenotype + other.phenotype) / 2.0
+                  return Operation(SmokeGenome(mid, target=self.target))
+
+
+          builder = ExperimentBuilder(
+              inital_population_strategy=lambda: Population(
+                  [SmokeGenome(float(i) * 10.0) for i in range(4)]
+              ),
+              convergence_criterion=iteration_limited_convergence(2),
+              mutation_policy=random_mutation(0.5),
+              reproduction_policy=ReproductionPolicy(
+                  generational_reproduction(4),
+                  tournament_selection,
+              ),
+              experiment_controller=TerminalController(),
+          )
+          population = builder.build().run()
+          _best, fitness = max(population.get_genome_fitness(), key=lambda item: item[1])
           assert population.get_genome_count() == 4
           assert fitness > 0
-          print(f'genai-opt {genai_opt.__version__} ran a smoke experiment, best fitness {fitness:.2f}')
-          "
+          print(f"genai-opt {genai_opt.__version__} ran a smoke experiment, best fitness {fitness:.2f}")
+          PY
+          # Strip the YAML indentation so the generated file is valid Python.
+          sed -i 's/^          //' /tmp/smoke_wheel.py
+          cd /tmp
+          /tmp/smoke/bin/python /tmp/smoke_wheel.py
 
       - name: Upload the distribution
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

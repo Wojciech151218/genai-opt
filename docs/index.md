@@ -34,7 +34,7 @@ pytest
 ```python
 from experiments.simple_experiment import run_simple_experiment
 
-population = run_simple_experiment(iterations=10, checkpoint_dir=None)
+population = run_simple_experiment(iterations=10, checkpoint_db=None)
 best_genome, best_fitness = max(population.get_genome_fitness(), key=lambda item: item[1])
 print(best_genome.phenotype, best_fitness)
 ```

@@ -31,7 +31,7 @@ population = run_simple_experiment(
     iterations=10,
     mutation_rate=0.2,
     population_size=20,
-    checkpoint_dir=None,
+    checkpoint_db=None,
 )
 
 best_genome, best_fitness = max(
@@ -42,7 +42,7 @@ best_genome, best_fitness = max(
 print(best_genome.phenotype, best_fitness)
 ```
 
-Leave `checkpoint_dir` at its default and the run saves its progress, so calling
+Leave `checkpoint_db` at its default and the run saves its progress, so calling
 the function again continues where it stopped instead of starting over. See
 [Checkpoints and Resuming](checkpoints.md).
 

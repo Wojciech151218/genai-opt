@@ -67,7 +67,6 @@ def timed_operation(fn: Callable[P, Outcome[R]]) -> Callable[P, Operation[R]]: .
 
 def timed_operation(fn: Callable[P, Any]) -> Callable[P, Any]:
     """Time a callback and wrap its return value in an ``Operation``."""
-
     if inspect.iscoroutinefunction(fn):
 
         @wraps(fn)

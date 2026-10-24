@@ -10,6 +10,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from experiments.haiku_experiment import HaikuEvaluation, HaikuOutput
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableLambda
@@ -19,7 +20,6 @@ from genai_opt.adapters.simple_system_prompt_genome.types import (
     EvaluationScore,
     SystemPromptMutation,
 )
-from experiments.haiku_experiment import HaikuEvaluation, HaikuOutput
 
 VALID_HAIKU = HaikuOutput(
     line_one="An old silent pond",

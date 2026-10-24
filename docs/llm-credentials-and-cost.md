@@ -76,5 +76,5 @@ Pass a stub chat model to `build_haiku_experiment` instead of calling
 `run_haiku_experiment`. Because every genome operation is injected as a function,
 no real provider is required — this is exactly how the test suite exercises the
 LLM-backed paths. For engine behavior unrelated to prompts, use
-[`FloatGenome`](api.md#experiments.float_genome.FloatGenome), which needs
+`experiments.float_genome.FloatGenome` in the repository checkout, which needs
 no network access at all.

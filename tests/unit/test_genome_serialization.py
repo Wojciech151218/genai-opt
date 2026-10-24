@@ -1,4 +1,6 @@
 import pytest
+from experiments.float_genome import FloatGenome
+from experiments.haiku_experiment import HaikuOutput, evaluate_haiku_function
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 
@@ -10,8 +12,6 @@ from genai_opt.adapters.simple_system_prompt_genome import (
     mutate_prompt_function,
 )
 from genai_opt.adapters.simple_system_prompt_genome.helpers import llm_to_config
-from experiments.float_genome import FloatGenome
-from experiments.haiku_experiment import HaikuOutput, evaluate_haiku_function
 from genai_opt.optimizer_engine.checkpointer.filesystem import FilesystemCheckpointer
 from genai_opt.optimizer_engine.engine_state import EngineState, IterationPhase
 from genai_opt.optimizer_engine.genome import Genome

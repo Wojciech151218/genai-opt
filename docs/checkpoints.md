@@ -19,7 +19,7 @@ engine = builder.build().from_checkpoint()
 the engine unchanged, so one code path covers both starting and resuming. The
 bundled experiments already do this, which is why calling `run_simple_experiment()`
 twice continues the earlier run rather than starting fresh. Pass
-`checkpoint_dir=None` when you want a self-contained run.
+`checkpoint_db=None` when you want a self-contained run.
 
 ## What is on disk
 

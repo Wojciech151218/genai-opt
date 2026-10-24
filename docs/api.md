@@ -76,11 +76,9 @@ the compatibility promise.
 
 ## Example Experiments
 
-::: experiments.float_genome.FloatGenome
-
-::: experiments.simple_experiment
-
-::: experiments.haiku_experiment
+Example runners live in the repository's top-level [`experiments/`](https://github.com/Wojciech151218/genai-opt/tree/main/experiments)
+package. They are not installed with the wheel — clone the repo (or copy the
+files) to run them. See [Getting Started](getting-started.md).
 
 ## Environment
 

@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from experiments.float_genome import FloatGenome
+from experiments.haiku_experiment import HaikuOutput, evaluate_haiku_function
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.messages import HumanMessage
 
@@ -10,8 +12,6 @@ from genai_opt.adapters.simple_system_prompt_genome import (
     invoke_task_message_function,
     mutate_prompt_function,
 )
-from experiments.float_genome import FloatGenome
-from experiments.haiku_experiment import HaikuOutput, evaluate_haiku_function
 from genai_opt.optimizer_engine.checkpointer.sqlite_checkpointer import SqliteCheckpointer
 from genai_opt.optimizer_engine.engine_state import EngineState, IterationPhase
 from genai_opt.optimizer_engine.iteration_metadata import IterationMetadata

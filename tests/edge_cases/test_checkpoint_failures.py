@@ -8,8 +8,8 @@ that has already been paid for.
 import json
 
 import pytest
-
 from experiments.float_genome import FloatGenome
+
 from genai_opt.optimizer_engine.checkpointer import FilesystemCheckpointer
 from genai_opt.optimizer_engine.convergence_criterion.convergence_criterion import (
     iteration_limited_convergence,
@@ -137,6 +137,7 @@ def test_a_non_list_population_is_rejected(tmp_path) -> None:
 def test_missing_api_key_fails_before_any_work_is_done(monkeypatch, tmp_path) -> None:
     """Credentials are checked up front, not discovered mid-run."""
     from experiments import haiku_experiment
+
     from genai_opt import env as genai_env
 
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
@@ -148,6 +149,7 @@ def test_missing_api_key_fails_before_any_work_is_done(monkeypatch, tmp_path) ->
 
 def test_missing_api_key_message_names_the_alternatives(monkeypatch) -> None:
     from experiments import haiku_experiment
+
     from genai_opt import env as genai_env
 
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
@@ -162,6 +164,7 @@ def test_missing_api_key_message_names_the_alternatives(monkeypatch) -> None:
 
 def test_an_explicit_api_key_bypasses_the_environment(monkeypatch) -> None:
     from experiments import haiku_experiment
+
     from genai_opt import env as genai_env
 
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)

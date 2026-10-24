@@ -7,9 +7,8 @@ credential-free experiment stops being credential-free.
 import subprocess
 import sys
 
-import pytest
-
 import experiments as experiments
+import pytest
 
 
 def test_lazy_names_resolve_to_the_haiku_module() -> None:

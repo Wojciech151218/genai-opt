@@ -11,7 +11,9 @@ underscore-prefixed name:
 - `genai_opt.__version__`
 - everything in `genai_opt.optimizer_engine`
 - everything in `genai_opt.adapters` and its adapter packages
-- the example experiments in `genai_opt.experiments`
+
+The top-level `experiments/` directory in the repository is illustrative only
+and is not part of the installed package or the compatibility promise.
 
 Type hints ship with the package: a `py.typed` marker is included, so type
 checkers use the annotations directly.

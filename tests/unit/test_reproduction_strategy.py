@@ -3,6 +3,7 @@
 import asyncio
 
 from experiments.float_genome import FloatGenome
+
 from genai_opt.optimizer_engine.population import Population
 from genai_opt.optimizer_engine.reproduction_policy.parent_selection import (
     tournament_selection,

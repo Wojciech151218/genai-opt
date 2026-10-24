@@ -15,14 +15,14 @@ from genai_opt.adapters.simple_system_prompt_genome.functions import (
 )
 from genai_opt.adapters.simple_system_prompt_genome.genome import SimpleSystemPromptGenome
 from genai_opt.adapters.simple_system_prompt_genome.helpers import extract_parsed
+from genai_opt.adapters.simple_system_prompt_genome.types import (
+    EvaluationScore,
+    SimpleSystemPromptPhenotype,
+)
 from genai_opt.optimizer_engine.utils.timed_operation import (
     AdapterResult,
     build_operation,
     timed_operation,
-)
-from genai_opt.adapters.simple_system_prompt_genome.types import (
-    EvaluationScore,
-    SimpleSystemPromptPhenotype,
 )
 
 _USAGE = {"input_tokens": 12, "output_tokens": 8, "total_tokens": 20}

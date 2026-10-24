@@ -3,7 +3,6 @@
 import asyncio
 
 import pytest
-
 from experiments.float_genome import FloatGenome
 
 

@@ -1,6 +1,3 @@
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain_core.messages import HumanMessage
-
 from experiments.haiku_experiment import (
     SEED_SYSTEM_PROMPTS,
     HaikuOutput,
@@ -9,6 +6,8 @@ from experiments.haiku_experiment import (
     create_haiku_genome,
     create_initial_population,
 )
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.messages import HumanMessage
 
 
 class _StubChatModel(BaseChatModel):
