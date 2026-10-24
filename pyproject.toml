@@ -24,15 +24,17 @@ dependencies = [
 dev = ["pytest>=7.0", "ruff>=0.15.20", "pytest-cov>=4.0", "mkdocs>=1.6", "pre-commit"]
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["src", "."]
+include = ["genai_opt*", "experiments"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src", "."]
 
 [tool.ruff]
 target-version = "py313"
 line-length = 120
-src = ["src", "tests"]
+src = ["src", "experiments", "tests"]
 
 [tool.ruff.lint]
 select = [

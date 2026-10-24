@@ -10,8 +10,8 @@ from genai_opt.adapters.simple_system_prompt_genome import (
     invoke_task_message_function,
     mutate_prompt_function,
 )
-from genai_opt.experiments.float_genome import FloatGenome
-from genai_opt.experiments.haiku_experiment import HaikuOutput, evaluate_haiku_function
+from experiments.float_genome import FloatGenome
+from experiments.haiku_experiment import HaikuOutput, evaluate_haiku_function
 from genai_opt.optimizer_engine.checkpointer.sqlite_checkpointer import SqliteCheckpointer
 from genai_opt.optimizer_engine.engine_state import EngineState, IterationPhase
 from genai_opt.optimizer_engine.iteration_metadata import IterationMetadata

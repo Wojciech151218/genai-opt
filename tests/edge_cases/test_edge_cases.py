@@ -1,6 +1,6 @@
 import asyncio
 
-from genai_opt.experiments.simple_experiment import run_simple_experiment
+from experiments.simple_experiment import run_simple_experiment
 
 
 def test_population_size_one():
@@ -20,11 +20,15 @@ def test_zero_iterations():
 
 def test_mutation_rate_zero():
     """Mutation rate of 0.0 should complete without errors (no mutations applied)."""
-    result = asyncio.run(run_simple_experiment(mutation_rate=0.0, iterations=5, population_size=10, checkpoint_db=None))
+    result = asyncio.run(
+        run_simple_experiment(mutation_rate=0.0, iterations=5, population_size=10, checkpoint_db=None)
+    )
     assert result.get_genome_count() > 0
 
 
 def test_mutation_rate_one():
     """Mutation rate of 1.0 should complete without errors (all genomes mutated)."""
-    result = asyncio.run(run_simple_experiment(mutation_rate=1.0, iterations=5, population_size=10, checkpoint_db=None))
+    result = asyncio.run(
+        run_simple_experiment(mutation_rate=1.0, iterations=5, population_size=10, checkpoint_db=None)
+    )
     assert result.get_genome_count() > 0

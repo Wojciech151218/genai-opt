@@ -4,7 +4,7 @@ import asyncio
 from pathlib import Path
 from random import uniform
 
-from genai_opt.experiments.float_genome import FloatGenome
+from experiments.float_genome import FloatGenome
 from genai_opt.optimizer_engine import (
     ExperimentBuilder,
     Population,

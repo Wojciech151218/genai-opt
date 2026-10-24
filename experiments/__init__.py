@@ -1,5 +1,5 @@
-from genai_opt.experiments.float_genome import FloatGenome
-from genai_opt.experiments.haiku_experiment import (
+from experiments.float_genome import FloatGenome
+from experiments.haiku_experiment import (
     HaikuEvaluation,
     HaikuOutput,
     create_initial_population,

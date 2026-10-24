@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from genai_opt.experiments.float_genome import FloatGenome
+from experiments.float_genome import FloatGenome
 from genai_opt.optimizer_engine.checkpointer.sqlite_checkpointer import SqliteCheckpointer
 from genai_opt.optimizer_engine.dashboard_api import (
     DashboardAPIServer,
