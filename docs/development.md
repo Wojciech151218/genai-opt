@@ -40,7 +40,9 @@ method, in Google style. New public API without a docstring fails the build.
 
 CI additionally runs the suite on every supported Python version (3.11, 3.12 and
 3.13) and installs the built wheel into a clean environment, since an editable
-install hides packaging mistakes.
+install hides packaging mistakes. That packaging smoke lives in
+`tests/distribution/test_wheel_smoke.py` and is executed from `/tmp` against the
+wheel, not from the checkout.
 
 ## Documentation Structure
 
