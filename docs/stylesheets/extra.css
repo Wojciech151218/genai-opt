@@ -4,8 +4,8 @@
   --md-accent-fg-color: #d900e6;
   --docs-link-color: #315d95;
   --docs-rule-color: #e4e4e9;
-  --md-text-font: "Segoe UI", "Helvetica Neue", sans-serif;
-  --md-code-font: Consolas, "Liberation Mono", monospace;
+  --md-text-font: "IBM Plex Sans", "Segoe UI", sans-serif;
+  --md-code-font: "IBM Plex Mono", Consolas, monospace;
 }
 
 [data-md-color-scheme="slate"] {
@@ -19,17 +19,21 @@
 .md-grid { max-width: 88rem; }
 .md-header { box-shadow: none; border-bottom: 1px solid rgba(255, 255, 255, 0.18); }
 .md-header__inner { min-height: 3.5rem; }
-.md-header__button.md-logo { color: #ffffff; }
+.md-header__button.md-logo, .md-nav--primary .md-nav__title .md-nav__button.md-logo { display: none; }
+.md-nav--primary > .md-nav__title { height: 3.5rem; padding: 0.8rem 1rem; }
 .md-header__title { font-size: 1.1rem; font-weight: 650; letter-spacing: -0.02em; }
+.md-header__topic:first-child { opacity: 1 !important; transform: none !important; }
+.md-header__topic[data-md-component="header-topic"] { display: none; }
 .md-header__source { color: #ffffff; }
-.md-nav__source { background: #143f82; }
+.md-nav__source { display: none; }
 .md-source__facts { display: none; }
 .md-search__form { border: 1px solid rgba(255, 255, 255, 0.35); border-radius: 0.45rem; background: rgba(255, 255, 255, 0.12); }
 .md-search__input { color: #ffffff; }
 .md-search__input::placeholder { color: rgba(255, 255, 255, 0.8); }
-.md-main__inner { margin-top: 1.2rem; }
+.md-main__inner { margin-top: 0.25rem; }
 .md-content__inner { max-width: 48rem; margin-left: auto; margin-right: auto; }
 .md-sidebar { width: 13rem; }
+.md-sidebar--primary { padding-top: 0; }
 .md-nav { font-size: 0.78rem; line-height: 1.55; }
 .md-nav__item { padding-top: 0.2rem; padding-bottom: 0.2rem; }
 .md-nav__item--nested .md-nav { border-left: 1px solid var(--docs-rule-color); margin-left: 0.35rem; }
@@ -56,6 +60,10 @@
 @media (max-width: 76.234375em) {
   .md-sidebar--primary { width: 12.1rem; }
   .md-content__inner { padding-left: 1rem; padding-right: 1rem; }
+}
+
+@media (min-width: 76.25em) {
+  .md-sidebar--primary .md-nav__title { display: none; }
 }
 
 @media (max-width: 44.984375em) {
