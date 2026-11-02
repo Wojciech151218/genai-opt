@@ -156,3 +156,23 @@ Decorative glassmorphism effects (animated background orbs, heavy backdrop blur,
 
 **Solution:**
 Scoped the alternative workspace aesthetic cleanly under `[data-style="modern"]` CSS custom properties and layout overrides in a dedicated stylesheet (`modern-developer.css`), preserving `Liquid Glass` intact while offering one-click switching.
+
+---
+
+## 2026-11-02 - Modular React Architecture Refactoring for Web Dashboard
+
+**Goal:** Refactor the monolithic frontend codebase (`App.jsx` and `DatabaseExplorer.jsx`) into a modular, maintainable React architecture without altering application behavior or visual styling.
+
+**Completed:**
+
+- Configured the `@` path alias (`./src`) in `dashboard/vite.config.js` to eliminate deep relative imports.
+- Extracted configuration constants (`src/constants/config.js`), pure formatting and storage helpers (`src/utils/formatters.js`, `src/utils/storage.js`), and the read-only HTTP client (`src/services/dashboardApi.js`) with `AbortSignal` support.
+- Isolated stateful side effects into dedicated custom hooks (`useTheme`, `useStyleVariant`, `useToast`, `useEngineSocket`, `useDatabaseExplorer`) with full effect cleanup (`AbortController` cancellation, timer clearing, and `StrictMode`-safe WebSocket guards).
+- Deduplicated shared UI building blocks (`Panel`, memoized `GenomeCard`, memoized `OperationCard`, and `MetricCard` in `src/components/common/`), layout chrome (`src/components/layout/`), and feature panels (`src/features/live-monitor/` and `src/features/database-explorer/`).
+- Slimmed `src/App.jsx` down to pure layout composition and view switching, relocated stylesheets to `src/styles/`, added JSDoc prop/function annotations, and verified zero warnings/errors with `oxlint` and `vite build`.
+
+**Problem:**
+All dashboard UI markup, WebSocket connection handling, cascading SQLite HTTP fetches, local storage persistence, and duplicated genome/operation card templates were concentrated inside two large files (`App.jsx` and `DatabaseExplorer.jsx`), making components harder to test, maintain, and extend independently.
+
+**Solution:**
+Separated presentational components from stateful hooks and network services, unified duplicated genome/operation cards across both views with `React.memo` and stable client/database keys, and preserved exact DOM structure and CSS cascade order (`index.css` followed by `modern-developer.css`) for 100% visual parity.
