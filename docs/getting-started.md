@@ -1,126 +1,90 @@
-# Getting Started
+# First Experiment
 
-## Requirements
+Run the bundled numeric optimizer and inspect its final population. The
+example requires a source checkout, not model credentials.
 
-Python 3.11 or newer, on Linux, macOS or Windows.
+## Basic Usage
 
-Install with development dependencies:
-
-```bash
-pip install -e ".[dev]"
-```
-
-## Verify the installation
-
-```bash
-pytest
-ruff check .
-ruff format --check .
-```
-
-## Run the bundled experiment
-
-The simplest experiment evolves float values toward a target. It needs no
-credentials and no network access.
+From the repository root, activate the environment from
+[Installation](installation.md) and start `python` (or `py` on Windows).
+Paste this complete example into the interpreter:
 
 ```python
+from math import isclose
+
 from experiments.simple_experiment import run_simple_experiment
+from genai_opt.optimizer_engine import Genome, Population
 
-population = run_simple_experiment(
-    target=50.0,
-    iterations=10,
-    mutation_rate=0.2,
-    population_size=20,
-    checkpoint_db=None,
+population: Population[float, float] = run_simple_experiment(
+    iterations=3,
+    checkpoint_db=None,  # (1)!
 )
-
-best_genome, best_fitness = max(
+best: tuple[Genome[float, float], float] = max(
     population.get_genome_fitness(),
     key=lambda item: item[1],
 )
+best_genome, best_fitness = best
 
-print(best_genome.phenotype, best_fitness)
+print(population.get_genome_count())
+#> 20
+print(isclose(best_fitness, 100.0 - abs(best_genome.phenotype - 50.0)))
+#> True
+print(best_fitness <= 100.0)
+#> True
 ```
 
-Leave `checkpoint_db` at its default and the run saves its progress, so calling
-the function again continues where it stopped instead of starting over. See
-[Checkpoints and Resuming](checkpoints.md).
+1. Disable SQLite checkpoints. Each invocation starts with a new random population.
 
-## Build an experiment from parts
+The exact value of `best_genome.phenotype` varies between runs. Fitness is
+`100 - abs(value - target)`; the target is `50.0` by default.
 
-The canned runners are conveniences. Underneath, an experiment is four decisions
-handed to `ExperimentBuilder`: where the first generation comes from, when to
-stop, which offspring to mutate, and how to reproduce.
+!!! info "Local WebSocket"
+    The runner opens a WebSocket on `localhost:8765` while it runs, even
+    without the dashboard. It does not call an external model or service.
+
+## Configuration
+
+`run_simple_experiment` evaluates each generation, selects parents with
+tournament selection, creates offspring, mutates some of them and replaces the
+old population. The returned population has evaluated fitness values.
+
+| Parameter | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `target` | `float` | `50.0` | Numeric value to approach. |
+| `iterations` | `int` | `10` | Number of iterations to run. |
+| `mutation_rate` | `float` | `0.2` | Probability of mutating each offspring, not the size of its numeric change. |
+| `population_size` | `int` | `20` | Number of candidates per generation. |
+| `checkpoint_db` | `str | Path | None` | `.checkpoints/simple_experiment.db` | SQLite path; `None` disables persistence. |
+| `launch_ui` | `bool` | `False` | Start the optional dashboard. |
+
+Omit `checkpoint_db=None` to save state at the default path. Reusing that
+path loads the saved experiment instead of starting fresh. The other values
+are not a guarantee that fitness will improve on every iteration.
+
+## Edge Cases
+
+A zero-sized population can be returned if zero iterations are requested.
+Choosing its best genome raises `ValueError` in `max()`:
 
 ```python
-from experiments.float_genome import FloatGenome
-from genai_opt.optimizer_engine import (
-    ExperimentBuilder,
-    Population,
-    ReproductionPolicy,
-    TerminalController,
-    generational_reproduction,
-    iteration_limited_convergence,
-    random_mutation,
-    tournament_selection,
+from experiments.simple_experiment import run_simple_experiment
+from genai_opt.optimizer_engine import Population
+
+empty_population: Population[float, float] = run_simple_experiment(
+    iterations=0,
+    population_size=0,
+    checkpoint_db=None,
 )
+print(empty_population.get_genome_count())
+#> 0
 
-engine = ExperimentBuilder(
-    inital_population_strategy=lambda: Population([FloatGenome(0.0) for _ in range(20)]),
-    convergence_criterion=iteration_limited_convergence(10),
-    mutation_policy=random_mutation(0.2),
-    reproduction_policy=ReproductionPolicy(
-        generational_reproduction(20),
-        tournament_selection,
-    ),
-    experiment_controller=TerminalController(),
-).build()
-
-population = engine.run()
+try:
+    max(empty_population.get_genome_fitness(), key=lambda item: item[1])
+except ValueError as error:
+    print(type(error).__name__)
+    #> ValueError
 ```
 
-The `TerminalController` prints each phase and operation as it happens, and lets
-you pause the run by pressing `p`. Add a `checkpointer` to make the run resumable.
-
-For finer control than `run()` — driving the loop from an existing event loop, or
-stopping on your own terms — see [Iteration Phases](phases.md).
-
-## Write your own genome
-
-Subclass `Genome` and implement the four operations. Fitness is whatever
-`evaluate` returns, and higher is better.
-
-```python
-from genai_opt.optimizer_engine import Genome, Operation
-
-
-class MyGenome(Genome):
-    async def invoke(self) -> Operation[str]:
-        return Operation(str(self.phenotype))
-
-    async def evaluate(self) -> Operation[float]:
-        return Operation(float(len(self.invocation)))
-
-    async def mutate(self) -> Operation["MyGenome"]:
-        return Operation(MyGenome(self.phenotype + 1))
-
-    async def crossover(self, other: Genome) -> Operation["MyGenome"]:
-        return Operation(MyGenome((self.phenotype + other.phenotype) // 2))
-```
-
-To checkpoint it, also override `to_json` and `_from_json`; see
-[`Genome`](api.md#genai_opt.optimizer_engine.genome.Genome).
-
-## Optimize an LLM prompt
-
-For prompt optimization you do not need a genome subclass at all — the
-[system prompt adapter](api.md#system-prompt-adapter) composes one from functions.
-Read [LLM Credentials and Cost](llm-credentials-and-cost.md) first: those runs call
-real models and spend real money.
-
-## Build the documentation
-
-```bash
-mkdocs serve   # live preview
-mkdocs build   # static site
-```
+!!! warning "Port already in use"
+    A second experiment using `localhost:8765` at the same time cannot
+    start its WebSocket server. Stop the other run before retrying.

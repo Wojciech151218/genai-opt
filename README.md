@@ -38,8 +38,8 @@ best_genome, best_fitness = max(population.get_genome_fitness(), key=lambda item
 print(best_genome.phenotype, best_fitness)
 ```
 
-See the [documentation](docs/index.md) for building experiments from parts,
-writing your own genome, resuming from checkpoints, and optimizing LLM prompts.
+Start with the [documentation](docs/index.md), including installation and a
+step-by-step first experiment.
 
 ## Development
 
@@ -64,10 +64,11 @@ ruff check .
 ruff format --check .
 ```
 
-Build documentation locally:
+Preview or build documentation locally:
 
 ```bash
-mkdocs build
+python -m mkdocs serve --dev-addr 127.0.0.1:8000
+python -m mkdocs build --strict
 ```
 
 ## License

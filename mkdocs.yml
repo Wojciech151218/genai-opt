@@ -1,41 +1,66 @@
-site_name: genai-opt
+site_name: genai-opt / Docs
 site_description: Documentation for the genai-opt Python optimization library.
 repo_url: https://github.com/Wojciech151218/genai-opt
 
 theme:
-  name: readthedocs
+  name: material
+  language: en
+  font: false
+  icon:
+    logo: material/dna
+  palette:
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - toc.follow
+
+extra_css:
+  - stylesheets/extra.css
 
 nav:
-  - Home: index.md
-  - Getting Started: getting-started.md
-  - Iteration Phases: phases.md
-  - Checkpoints and Resuming: checkpoints.md
-  - LLM Credentials and Cost: llm-credentials-and-cost.md
-  - API Reference: api.md
-  - API Stability: api-stability.md
-  - SQLite Checkpointer: sqlite-checkpointer.md
-  - WebSocket Controller: websocket-controller.md
-  - Web Dashboard: web-dashboard.md
-  - Development: development.md
-  - Releasing: releasing.md
+  - Welcome: index.md
+  - Installation: installation.md
+  - First Experiment: getting-started.md
+
+exclude_docs: |
+  /api-stability.md
+  /api.md
+  /checkpoints.md
+  /development.md
+  /llm-credentials-and-cost.md
+  /phases.md
+  /releasing.md
+  /sqlite-checkpointer.md
+  /web-dashboard.md
+  /websocket-controller.md
 
 plugins:
   - search
-  - mkdocstrings:
-      default_handler: python
-      handlers:
-        python:
-          paths: [src]
-          options:
-            docstring_style: google
-            show_source: false
-            show_root_heading: true
-            show_signature_annotations: true
-            separate_signature: true
-            members_order: source
-            filters: ["!^_"]
 
 markdown_extensions:
   - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
   - toc:
       permalink: true
