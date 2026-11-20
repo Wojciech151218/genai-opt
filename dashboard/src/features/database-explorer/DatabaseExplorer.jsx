@@ -1,9 +1,11 @@
-import { AlertCircle } from 'lucide-react';
-import CheckpointsTimeline from '@/features/database-explorer/CheckpointsTimeline';
-import ExplorerToolbar from '@/features/database-explorer/ExplorerToolbar';
-import PhaseOperationsPanel from '@/features/database-explorer/PhaseOperationsPanel';
-import SavedPopulationPanel from '@/features/database-explorer/SavedPopulationPanel';
-import { useDatabaseExplorer } from '@/features/database-explorer/useDatabaseExplorer';
+import { AlertCircle } from "lucide-react";
+import { useState } from "react";
+import CheckpointsTimeline from "@/features/database-explorer/CheckpointsTimeline";
+import ExplorerToolbar from "@/features/database-explorer/ExplorerToolbar";
+import PhaseOperationsPanel from "@/features/database-explorer/PhaseOperationsPanel";
+import SavedPopulationPanel from "@/features/database-explorer/SavedPopulationPanel";
+import { useDatabaseExplorer } from "@/features/database-explorer/useDatabaseExplorer";
+import FitnessConvergenceChart from "@/features/database-explorer/charts/FitnessConvergenceChart";
 
 /**
  * Historical SQLite checkpoint explorer view composed of toolbar, error banner, and 3-column grid.
@@ -33,6 +35,8 @@ function DatabaseExplorer() {
     handleRefresh,
   } = useDatabaseExplorer();
 
+  const [viewMode, setViewMode] = useState("inspector");
+
   return (
     <div className="explorer-wrapper">
       <ExplorerToolbar
@@ -44,11 +48,13 @@ function DatabaseExplorer() {
         selectedExp={selectedExp}
         summary={currentExpSummary}
         loading={loading}
+        viewMode={viewMode}
         onSelectDbOption={handleDbSelectChange}
         onCustomDbPathChange={setCustomDbPath}
         onShowDbList={showDatabaseList}
         onSelectExp={setSelectedExp}
         onRefresh={handleRefresh}
+        onSelectViewMode={setViewMode}
       />
 
       {apiError && (
@@ -65,13 +71,23 @@ function DatabaseExplorer() {
           hasError={Boolean(apiError)}
           onSelectCheckpoint={setSelectedCheckpointId}
         />
-        <SavedPopulationPanel
-          checkpointDetail={checkpointDetail}
-          populationTab={populationTab}
-          displayedGenomes={displayedGenomes}
-          onSelectPopulationTab={setPopulationTab}
-        />
-        <PhaseOperationsPanel operations={checkpointDetail?.operations} />
+        {viewMode === "inspector" ? (
+          <>
+            <SavedPopulationPanel
+              checkpointDetail={checkpointDetail}
+              populationTab={populationTab}
+              displayedGenomes={displayedGenomes}
+              onSelectPopulationTab={setPopulationTab}
+            />
+            <PhaseOperationsPanel operations={checkpointDetail?.operations} />
+          </>
+        ) : (
+          <FitnessConvergenceChart
+            checkpoints={checkpoints}
+            selectedCheckpointId={selectedCheckpointId}
+            onSelectCheckpoint={setSelectedCheckpointId}
+          />
+        )}
       </div>
     </div>
   );
