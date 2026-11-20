@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- **Web dashboard frontend architecture.** Modularized the React + Vite frontend
+  (`dashboard/src/`) into single-responsibility presentational components
+  (`components/layout/`, `components/common/`), feature modules
+  (`features/live-monitor/`, `features/database-explorer/`), custom hooks
+  (`useEngineSocket`, `useDatabaseExplorer`, `useTheme`, `useStyleVariant`,
+  `useToast`), centralized configuration (`constants/config.js`), formatting and
+  storage helpers (`utils/`), and an `AbortController`-backed HTTP API client
+  (`services/dashboardApi.js`) while preserving identical runtime behavior and
+  styling (`styles/index.css`, `styles/modern-developer.css`).
+
 ## [0.3.1] - 2026-10-25
 
 ### Fixed
