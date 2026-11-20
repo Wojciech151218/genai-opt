@@ -5,7 +5,7 @@ import ExplorerToolbar from "@/features/database-explorer/ExplorerToolbar";
 import PhaseOperationsPanel from "@/features/database-explorer/PhaseOperationsPanel";
 import SavedPopulationPanel from "@/features/database-explorer/SavedPopulationPanel";
 import { useDatabaseExplorer } from "@/features/database-explorer/useDatabaseExplorer";
-import FitnessConvergenceChart from "@/features/database-explorer/charts/FitnessConvergenceChart";
+import AnalyticsPanel from "@/features/database-explorer/charts/AnalyticsPanel";
 
 /**
  * Historical SQLite checkpoint explorer view composed of toolbar, error banner, and 3-column grid.
@@ -82,8 +82,9 @@ function DatabaseExplorer() {
             <PhaseOperationsPanel operations={checkpointDetail?.operations} />
           </>
         ) : (
-          <FitnessConvergenceChart
+          <AnalyticsPanel
             checkpoints={checkpoints}
+            checkpointDetail={checkpointDetail}
             selectedCheckpointId={selectedCheckpointId}
             onSelectCheckpoint={setSelectedCheckpointId}
           />
