@@ -15,6 +15,7 @@ from genai_opt.adapters.simple_system_prompt_genome.types import (
 from genai_opt.optimizer_engine.genome import Genome
 from genai_opt.optimizer_engine.operation import Operation
 from genai_opt.optimizer_engine.serialization import import_type, type_path
+from genai_opt.optimizer_engine.utils.timed_operation import Outcome, timed_operation
 
 
 class SimpleSystemPromptGenome(Genome[SimpleSystemPromptPhenotype, InvSchema], Generic[InvSchema]):
@@ -23,20 +24,25 @@ class SimpleSystemPromptGenome(Genome[SimpleSystemPromptPhenotype, InvSchema], G
         phenotype: SimpleSystemPromptPhenotype,
         *,
         invocation_schema: type[InvSchema],
-        invoke_function: Callable[[SimpleSystemPromptPhenotype], Awaitable[Operation[InvSchema]]],
-        evaluate_function: Callable[[InvSchema], Awaitable[Operation[float]]],
-        mutate_function: Callable[[SimpleSystemPromptPhenotype], Operation[SimpleSystemPromptPhenotype]],
+        invoke_function: Callable[[SimpleSystemPromptPhenotype], Awaitable[Outcome[InvSchema]]],
+        evaluate_function: Callable[[InvSchema], Awaitable[Outcome[float]]],
+        mutate_function: Callable[[SimpleSystemPromptPhenotype], Outcome[SimpleSystemPromptPhenotype]],
         crossover_function: Callable[
             [SimpleSystemPromptPhenotype, SimpleSystemPromptPhenotype],
-            Operation[SimpleSystemPromptPhenotype],
+            Outcome[SimpleSystemPromptPhenotype],
         ],
     ):
         super().__init__(phenotype=phenotype)
         self._invocation_schema = invocation_schema
+        # Keep unwrapped callbacks for _child / checkpoint restore; wrap once for calls.
         self._invoke_function = invoke_function
         self._evaluate_function = evaluate_function
         self._mutate_function = mutate_function
         self._crossover_function = crossover_function
+        self._timed_invoke = timed_operation(invoke_function)
+        self._timed_evaluate = timed_operation(evaluate_function)
+        self._timed_mutate = timed_operation(mutate_function)
+        self._timed_crossover = timed_operation(crossover_function)
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -120,13 +126,13 @@ class SimpleSystemPromptGenome(Genome[SimpleSystemPromptPhenotype, InvSchema], G
         )
 
     async def invoke(self) -> Operation[InvSchema]:
-        return await self._invoke_function(self.phenotype)
+        return await self._timed_invoke(self.phenotype)
 
     async def evaluate(self) -> Operation[float]:
-        return await self._evaluate_function(self.invocation)
+        return await self._timed_evaluate(self.invocation)
 
     async def mutate(self) -> Operation[Self]:
-        return self._child_operation(self._mutate_function(self.phenotype))
+        return self._child_operation(self._timed_mutate(self.phenotype))
 
     async def crossover(self, other: Self) -> Operation[Self]:
-        return self._child_operation(self._crossover_function(self.phenotype, other.phenotype))
+        return self._child_operation(self._timed_crossover(self.phenotype, other.phenotype))

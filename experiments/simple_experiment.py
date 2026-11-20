@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import asyncio
 from pathlib import Path
 from random import uniform
 
-from genai_opt.experiments.float_genome import FloatGenome
+from experiments.float_genome import FloatGenome
 from genai_opt.optimizer_engine import (
     ExperimentBuilder,
     Population,
@@ -64,7 +63,7 @@ def build_simple_experiment(
     )
 
 
-async def run_simple_experiment(
+def run_simple_experiment(
     target: float = TARGET_VALUE,
     iterations: int = DEFAULT_ITERATIONS,
     mutation_rate: float = DEFAULT_MUTATION_RATE,
@@ -84,11 +83,11 @@ async def run_simple_experiment(
         builder.start_dashboard()
 
     engine = builder.build().from_checkpoint()
-    return await engine.run()
+    return engine.run()
 
 
 def main() -> None:
-    asyncio.run(run_simple_experiment(launch_ui=True))
+    run_simple_experiment(launch_ui=True)
 
 
 if __name__ == "__main__":

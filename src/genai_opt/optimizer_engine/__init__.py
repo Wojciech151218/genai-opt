@@ -1,3 +1,11 @@
+"""The evolutionary optimization engine and everything needed to configure it.
+
+Build an experiment with :class:`ExperimentBuilder`, which wires an initial
+population strategy, a convergence criterion, a mutation policy and a
+reproduction policy into an :class:`Engine`, optionally alongside a
+:class:`Checkpointer` and an :class:`ExperimentController`.
+"""
+
 from genai_opt.optimizer_engine.checkpointer import (
     Checkpointer,
     FilesystemCheckpointer,
@@ -12,9 +20,11 @@ from genai_opt.optimizer_engine.engine_state import EngineState, IterationPhase
 from genai_opt.optimizer_engine.experiment_builder import ExperimentBuilder
 from genai_opt.optimizer_engine.experiment_controller import (
     ExperimentController,
+    KeyReader,
     NullExperimentController,
     TerminalController,
     WebSocketExperimentController,
+    create_key_reader,
 )
 from genai_opt.optimizer_engine.genome import Genome
 from genai_opt.optimizer_engine.initial_population import (
@@ -44,6 +54,7 @@ __all__ = [
     "Genome",
     "IterationMetadata",
     "IterationPhase",
+    "KeyReader",
     "LLMMetadata",
     "NullCheckpointer",
     "NullExperimentController",
@@ -54,6 +65,7 @@ __all__ = [
     "TerminalController",
     "TerminalLoggerMetricsCollector",
     "WebSocketExperimentController",
+    "create_key_reader",
     "cycle_seeds_initial_population",
     "cycle_seeds_initial_population_strategy",
     "generational_reproduction",

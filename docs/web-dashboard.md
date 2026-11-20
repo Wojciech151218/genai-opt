@@ -56,3 +56,13 @@ PYTHONPATH=src python3 -m genai_opt.optimizer_engine.dashboard
 ```
 
 Then open `http://localhost:5173` in your browser.
+
+## Mock engine (no real experiment)
+
+To exercise the UI without running an LLM-backed experiment, start the mock WebSocket server in a second terminal:
+
+```bash
+python dashboard/mock_engine.py
+```
+
+It listens on `ws://localhost:8765` and streams fake iteration / operation / population telemetry, including pause and resume.

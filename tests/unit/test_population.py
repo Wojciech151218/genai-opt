@@ -3,8 +3,8 @@
 import asyncio
 
 import pytest
+from experiments.float_genome import FloatGenome
 
-from genai_opt.experiments.float_genome import FloatGenome
 from genai_opt.optimizer_engine.genome import Genome
 from genai_opt.optimizer_engine.operation import Operation
 from genai_opt.optimizer_engine.population import Population

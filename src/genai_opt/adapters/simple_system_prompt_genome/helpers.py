@@ -14,7 +14,21 @@ from pydantic import BaseModel
 
 from genai_opt.adapters.simple_system_prompt_genome.types import SystemPrompt
 from genai_opt.env import load_project_env
-from genai_opt.optimizer_engine.operation import Operation
+from genai_opt.optimizer_engine.utils.timed_operation import AdapterResult, build_operation
+
+__all__ = [
+    "AdapterResult",
+    "build_invoke_chat_prompt",
+    "build_operation",
+    "ensure_prompt_template",
+    "extract_parsed",
+    "extract_score",
+    "format_invocation_for_evaluation",
+    "llm_from_config",
+    "llm_to_config",
+    "render_system_prompt",
+    "system_message_template",
+]
 
 
 def render_system_prompt(prompt: SystemPrompt) -> str:
@@ -65,27 +79,6 @@ def extract_parsed(result: Any) -> Any:
             raise parsing_error
         return result["parsed"]
     return result
-
-
-def build_operation[V](
-    value: V,
-    result: Any,
-    *,
-    time_seconds: float | None = None,
-) -> Operation[V]:
-    """Wrap a value in an Operation, attaching LLM metadata from the raw AIMessage.
-
-    Applies ``Operation.from_ai_message`` when the ``include_raw=True`` result
-    carries a raw message with a recognizable usage shape; falls back to a bare
-    Operation otherwise.
-    """
-    raw_message = result.get("raw") if isinstance(result, dict) else None
-    if raw_message is not None:
-        try:
-            return Operation.from_ai_message(value, raw_message, time_seconds=time_seconds)
-        except ValueError:
-            pass
-    return Operation(value)
 
 
 def llm_to_config(llm: BaseChatModel) -> dict[str, Any]:
