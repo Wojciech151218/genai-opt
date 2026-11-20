@@ -27,10 +27,16 @@ function buildSmoothPath(pts) {
  * @param {{
  *   checkpoints: Array<Record<string, any>>,
  *   selectedCheckpointId: number | null,
- *   onSelectCheckpoint: (id: number) => void
+ *   onSelectCheckpoint: (id: number) => void,
+ *   headerPrefix?: import('react').ReactNode
  * }} props
  */
-function FitnessConvergenceChart({ checkpoints, selectedCheckpointId, onSelectCheckpoint }) {
+function FitnessConvergenceChart({
+  checkpoints,
+  selectedCheckpointId,
+  onSelectCheckpoint,
+  headerPrefix = null,
+}) {
   const [hoveredId, setHoveredId] = useState(null);
   const [visibleSeries, setVisibleSeries] = useState({
     best: true,
@@ -41,11 +47,14 @@ function FitnessConvergenceChart({ checkpoints, selectedCheckpointId, onSelectCh
 
   if (validSteps.length === 0) {
     return (
-      <div style={{ gridColumn: '2 / -1', display: 'flex', minHeight: 0 }}>
-        <Panel className="population-panel" title="Fitness Convergence">
-          <div className="empty-placeholder">No fitness data recorded yet.</div>
-        </Panel>
-      </div>
+      <Panel
+        className="population-panel"
+        title="Fitness Convergence"
+        headerRow
+        headerActions={headerPrefix}
+      >
+        <div className="empty-placeholder">No fitness data recorded yet.</div>
+      </Panel>
     );
   }
 
@@ -102,32 +111,34 @@ function FitnessConvergenceChart({ checkpoints, selectedCheckpointId, onSelectCh
     setVisibleSeries((prev) => ({ ...prev, [key]: !prev[key] }));
 
   const legendControls = (
-    <div className="pop-toggle">
-      <button
-        type="button"
-        className={`pop-toggle-btn ${visibleSeries.best ? 'active' : ''}`}
-        onClick={() => toggleSeries('best')}
-      >
-        ● Best
-      </button>
-      <button
-        type="button"
-        className={`pop-toggle-btn ${visibleSeries.mean ? 'active' : ''}`}
-        onClick={() => toggleSeries('mean')}
-      >
-        ● Mean
-      </button>
+    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+      {headerPrefix}
+      <div className="pop-toggle">
+        <button
+          type="button"
+          className={`pop-toggle-btn ${visibleSeries.best ? 'active' : ''}`}
+          onClick={() => toggleSeries('best')}
+        >
+          ● Best
+        </button>
+        <button
+          type="button"
+          className={`pop-toggle-btn ${visibleSeries.mean ? 'active' : ''}`}
+          onClick={() => toggleSeries('mean')}
+        >
+          ● Mean
+        </button>
+      </div>
     </div>
   );
 
   return (
-    <div style={{ gridColumn: '2 / -1', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-      <Panel
-        className="population-panel"
-        title="Fitness Convergence Across Steps"
-        headerRow
-        headerActions={legendControls}
-      >
+    <Panel
+      className="population-panel"
+      title="Fitness Convergence Across Steps"
+      headerRow
+      headerActions={legendControls}
+    >
         {activePoint && (
           <div
             className="step-metrics-bar"
@@ -297,7 +308,6 @@ function FitnessConvergenceChart({ checkpoints, selectedCheckpointId, onSelectCh
           </svg>
         </div>
       </Panel>
-    </div>
   );
 }
 
