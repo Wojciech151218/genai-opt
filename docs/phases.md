@@ -40,6 +40,27 @@ Driving `step()` directly is also how you interleave the engine with your own
 work: it returns the metadata for the phase that just ran, so you can inspect
 fitness, token usage and cost after each one and stop early on your own terms.
 
+## Reusing stored evaluations
+
+By default, the engine invokes and evaluates every genome during
+`EVALUATE_POPULATION`, even if that genome already has a fitness from the
+previous `EVALUATE_OFFSPRING` phase. Set `reuse_evaluations=True` on
+`ExperimentBuilder` or `Engine` to skip genomes that already have both a stored
+invocation result and fitness:
+
+```python
+from experiments.simple_experiment import build_simple_experiment
+
+engine = build_simple_experiment(reuse_evaluations=True).build()
+```
+
+This can save model calls when evaluation is expensive. It also means the engine
+keeps the existing fitness instead of sampling a fresh invocation and score.
+That tradeoff matters when model outputs or an LLM judge are stochastic. The
+option defaults to `False`, preserving the existing behavior. Newly created
+offspring have no stored result and are always evaluated. Reuse the score only
+when the task and evaluation setup have not changed since that score was produced.
+
 ## Convergence is only checked between iterations
 
 The convergence criterion is consulted at the top of an iteration, when the next

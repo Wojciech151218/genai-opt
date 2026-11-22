@@ -33,6 +33,8 @@ class ExperimentBuilder(Generic[P, Inv]):
             nothing.
         experiment_controller: Observes phases and operations, and can pause the
             run. Defaults to reporting nothing.
+        reuse_evaluations: Skip invoking and evaluating genomes that already have
+            both a stored invocation result and fitness. Defaults to ``False``.
     """
 
     def __init__(
@@ -43,6 +45,7 @@ class ExperimentBuilder(Generic[P, Inv]):
         reproduction_policy: ReproductionPolicy,
         checkpointer: Checkpointer[P, Inv] | None = None,
         experiment_controller: ExperimentController | None = None,
+        reuse_evaluations: bool = False,
     ):
         self.inital_population_strategy = inital_population_strategy
         self.convergence_criterion = convergence_criterion
@@ -50,6 +53,7 @@ class ExperimentBuilder(Generic[P, Inv]):
         self.reproduction_policy = reproduction_policy
         self.checkpointer = checkpointer or NullCheckpointer()
         self.experiment_controller = experiment_controller or NullExperimentController()
+        self.reuse_evaluations = reuse_evaluations
         self._launch_ui = False
 
     def start_dashboard(self) -> Self:
@@ -73,6 +77,7 @@ class ExperimentBuilder(Generic[P, Inv]):
             self.reproduction_policy,
             self.checkpointer,
             self.experiment_controller,
+            self.reuse_evaluations,
         )
         if self._launch_ui:
             engine.start_dashboard()

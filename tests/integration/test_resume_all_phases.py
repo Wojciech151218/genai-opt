@@ -37,7 +37,11 @@ PHASE_ORDER = [
 ]
 
 
-def _build_engine(checkpointer: FilesystemCheckpointer | None = None) -> Engine:
+def _build_engine(
+    checkpointer: FilesystemCheckpointer | None = None,
+    *,
+    reuse_evaluations: bool = False,
+) -> Engine:
     genomes = [FloatGenome(float(value), target=50.0) for value in range(0, POPULATION_SIZE * 10, 10)]
     return Engine(
         population=Population(genomes),
@@ -48,6 +52,7 @@ def _build_engine(checkpointer: FilesystemCheckpointer | None = None) -> Engine:
             tournament_selection,
         ),
         checkpointer=checkpointer,
+        reuse_evaluations=reuse_evaluations,
     )
 
 
@@ -135,3 +140,25 @@ def test_fitness_is_preserved_across_a_resume(tmp_path) -> None:
     resumed = _build_engine(checkpointer).from_checkpoint()
 
     assert [genome.evaluation for genome in resumed.population.population] == original
+
+
+def test_reuse_evaluations_skips_scoring_after_resume(tmp_path) -> None:
+    """Stored invocation and fitness are reused at the next population phase."""
+    checkpointer: FilesystemCheckpointer = FilesystemCheckpointer(tmp_path)
+    engine = _build_engine(checkpointer, reuse_evaluations=True)
+
+    async def complete_first_iteration() -> None:
+        for _ in range(5):
+            await engine.step()
+
+    asyncio.run(complete_first_iteration())
+    expected_invocations = [genome.invocation for genome in engine.population.population]
+    expected_fitnesses = [genome.evaluation for genome in engine.population.population]
+
+    resumed = _build_engine(checkpointer, reuse_evaluations=True).from_checkpoint()
+    metadata = asyncio.run(resumed.step())
+
+    assert metadata.operations == []
+    assert [genome.invocation for genome in resumed.population.population] == expected_invocations
+    assert [genome.evaluation for genome in resumed.population.population] == expected_fitnesses
+    assert resumed._state.phase is IterationPhase.REPRODUCE
