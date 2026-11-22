@@ -1,8 +1,9 @@
 # API Reference
 
-This page is generated from the docstrings in the source, so it cannot drift
-away from the code. See [API Stability](api-stability.md) for what is covered by
-the compatibility promise.
+Use this page to look up the library's signatures and behavior. It is generated
+from the source docstrings. See [Build Your Own Experiment](custom-experiment.md)
+for a complete runnable example and [API Stability](api-stability.md) for the
+compatibility policy.
 
 ## Package
 
@@ -48,6 +49,8 @@ the compatibility promise.
 
 ::: genai_opt.optimizer_engine.checkpointer.filesystem.FilesystemCheckpointer
 
+::: genai_opt.optimizer_engine.checkpointer.sqlite_checkpointer.SqliteCheckpointer
+
 ::: genai_opt.optimizer_engine.serialization
 
 ## Experiment Control
@@ -55,6 +58,8 @@ the compatibility promise.
 ::: genai_opt.optimizer_engine.experiment_controller.experiment_controller
 
 ::: genai_opt.optimizer_engine.experiment_controller.terminal_controller.TerminalController
+
+::: genai_opt.optimizer_engine.experiment_controller.websocket_controller.WebSocketExperimentController
 
 ::: genai_opt.optimizer_engine.experiment_controller.key_reader
 
@@ -77,8 +82,8 @@ the compatibility promise.
 ## Example Experiments
 
 Example runners live in the repository's top-level [`experiments/`](https://github.com/Wojciech151218/genai-opt/tree/main/experiments)
-package. They are not installed with the wheel — clone the repo (or copy the
-files) to run them. See [Getting Started](getting-started.md).
+package. They are not installed with the wheel. Clone the repository to run the
+[numeric demo](getting-started.md) or the [haiku example](haiku.md).
 
 ## Environment
 

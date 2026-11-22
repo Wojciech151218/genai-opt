@@ -1,7 +1,7 @@
 # Development
 
-This project follows the workflow described in `dev-guide.md` and
-`git-versioning-guide.md`.
+See [CONTRIBUTING.md](https://github.com/Wojciech151218/genai-opt/blob/main/CONTRIBUTING.md)
+for the project workflow, review requirements, and commit conventions.
 
 ## Workflow
 
@@ -35,8 +35,8 @@ ruff format --check .
 mkdocs build --strict
 ```
 
-`ruff check` enforces docstrings on every public module, class, function and
-method, in Google style. New public API without a docstring fails the build.
+`ruff check` enforces Google-style docstrings where the documentation lint
+rules are enabled. See the per-file exceptions in `pyproject.toml`.
 
 CI additionally runs the suite on every supported Python version (3.11, 3.12 and
 3.13) and installs the built wheel into a clean environment, since an editable
@@ -47,9 +47,10 @@ wheel, not from the checkout.
 ## Documentation Structure
 
 Reference documentation is generated from docstrings by `mkdocstrings`, so
-`docs/api.md` lists what to include rather than restating it. Document behavior in
-the docstring, not on the page. Narrative pages — phases, checkpoints, credentials
-and cost, API stability — are written by hand.
+`docs/api.md` lists what to include rather than restating it. Keep API behavior
+in the source docstrings. Use tutorials for runnable examples and guides for
+specific tasks. Make clear which decisions belong to the experiment author and
+which behavior comes from the library.
 
 ## Testing Expectations
 
@@ -71,10 +72,4 @@ Update documentation when a change affects:
 - user-facing behavior
 - development workflow
 
-User-facing release changes belong in `CHANGELOG.md`. Development decisions and
-academic process notes belong in `DEVELOPMENT_LOG.md`.
-
-## AI Usage
-
-Significant AI assistance should be recorded in `AI_USAGE_LOG.md` so the
-project remains transparent for academic evaluation.
+See the contribution guide for when to update `CHANGELOG.md`.

@@ -6,13 +6,16 @@
   <span class="docs-badge"><span>license</span><strong>MIT</strong></span>
 </div>
 
-`genai-opt` runs evolutionary optimization experiments, including experiments
-over LLM prompts. Candidates define how to run and score a solution; the engine
-handles selection, mutation and reproduction.
+`genai-opt` is a Python library for building and running evolutionary
+optimization experiments. You define what a candidate represents, how to run and
+score it, and how to vary it. The engine runs those operations across generations
+using your chosen policies.
 
 ## Quick Example
 
-From a repository checkout with development dependencies installed:
+This bundled demo evolves numbers toward `50.0`. It illustrates the engine; it
+is not a built-in mode of the library. Run it from a repository checkout with
+development dependencies installed:
 
 ```python
 from math import isclose
@@ -40,16 +43,18 @@ Higher fitness is better. The numeric result varies between runs; the
 
 ## How It Works
 
-A `Genome` represents one candidate. A `Population` groups candidates, and the
-`Engine` evaluates them, selects parents, creates offspring and runs the next
-iteration. Policies control selection, mutation and the stopping condition.
-
-Checkpoints are optional. Set `checkpoint_db=None` as above to start fresh on
-every run; keep the default SQLite path to resume saved progress.
+| You define | The library provides |
+| --- | --- |
+| The candidate representation, what running it produces, and what score counts as better. | `Genome`, `Operation`, and `Population` to represent and evaluate candidates. |
+| The starting population, selection, mutation probability, reproduction, and when to stop. | `ExperimentBuilder`, reusable policies, and an `Engine` that executes the [iteration phases](phases.md). |
+| Whether to persist or observe the run. | Optional [checkpointers](checkpoints.md), [controllers](api.md#experiment-control), and a [local dashboard](web-dashboard.md). |
 
 ## Next Steps
 
 | Page | What you will learn |
 | --- | --- |
 | [Installation](installation.md) | Install the library or prepare a source checkout. |
-| [First Experiment](getting-started.md) | Run and understand a credential-free experiment. |
+| [First Experiment](getting-started.md) | Run the bundled numeric demo without model credentials. |
+| [Build Your Own Experiment](custom-experiment.md) | Define a candidate and assemble a run using only the installed library. |
+| [Optimize a Prompt](haiku.md) | See how the same engine can evolve prompts with a chat model. |
+| [API Reference](api.md) | Look up library classes, policies, and extension points. |

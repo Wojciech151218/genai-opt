@@ -1,80 +1,57 @@
 # LLM Credentials and Cost
 
-The engine itself never talks to a model. Only LLM-backed genomes do, which means
-credentials and spend are properties of the experiment you configure rather than
-of the library.
+The engine does not call models itself. Credentials and spend depend on the
+genome operations you choose for your experiment.
 
-## Supplying credentials
+## Supplying Credentials
 
-Three options, in the order they are consulted:
+The [haiku runner](haiku.md) uses these options in order:
 
-1. **Pass a configured model.** Build the chat model yourself and hand it to the
-   experiment. This is the clearest option and the only one that works for
-   providers other than the default.
+1. **Configured model.** Pass `llm` to the runner to bypass the default OpenAI
+   setup. You can also pass the model to `build_haiku_experiment()` to configure
+   the engine without running it yet.
+2. **Explicit key.** Pass `api_key` to the runner when letting it create the
+   default chat model.
+3. **Environment.** Set `OPENAI_API_KEY` in the environment or in the local
+   `.env` file at the checkout root. An existing environment variable takes
+   precedence over the file.
 
-```python
-from experiments.haiku_experiment import build_haiku_experiment
+If the default model needs a key and none is found, `load_openai_api_key()`
+raises `RuntimeError` before the engine starts.
 
-engine = build_haiku_experiment(my_chat_model, iterations=3).build()
-```
+!!! warning "Keep keys out of experiment data"
+    Do not commit `.env` or put a key directly into sample code. The built-in
+    prompt adapter omits the API key from serialized model settings, but
+    checkpoints can still contain prompts, responses, and custom genome fields.
 
-2. **Pass a key explicitly.** `run_haiku_experiment(api_key=...)` forwards it to
-   the model factory.
+## What Uses Model Calls
 
-3. **Set the environment variable.** `OPENAI_API_KEY` is read from the environment,
-   falling back to a `.env` file in the repository root. Existing environment
-   variables win over the file, so an exported key is never overridden.
+For a prompt experiment such as haiku, the usual pattern is:
 
-If no key can be found, `create_llm` raises `RuntimeError` immediately rather than
-letting the run fail partway through with a provider error.
+| Phase | Requests |
+| --- | --- |
+| Evaluate population | Generate an output and optionally judge it for each candidate. |
+| Reproduce | Combine two prompts for each child. |
+| Mutate | Revise the prompt for each selected child. |
+| Evaluate offspring | Generate and optionally judge the children's outputs. |
+| Replace | No model calls. |
 
-## Keeping keys out of the repository
+The haiku example assigns zero fitness without calling the judge if the poem
+fails its local 5-7-5 check. Lowering `iterations`, `population_size`, or
+`mutation_rate` reduces planned work, but an iteration limit is not a spending
+cap. Billing also depends on token counts, provider rates, and retries.
 
-- `.env` is listed in `.gitignore`. Keep it that way.
-- Checkpoints never contain credentials: only the model name and generation
-  settings are stored, and the key is re-supplied when the model is rebuilt.
-- Nothing in the library writes to `.env` or logs a key. The terminal controller
-  prints model names, never credentials.
+## Tracking Usage
 
-## What an iteration costs
+An operation with model usage can carry an `LLMMetadata` record.
+`IterationMetadata` aggregates reported tokens, cost, and duration per
+phase. If you want cost totals, supply `LLMMetadata.cost` yourself; the
+library does not apply provider prices. Zero recorded cost does not imply
+that a request was free.
 
-Each iteration of an LLM-backed experiment makes roughly:
+## Running Without a Provider
 
-| Phase | Model calls |
-|-------|-------------|
-| Evaluate population | one invocation plus one evaluation per genome |
-| Reproduce | one crossover per child |
-| Mutate | one mutation per selected offspring |
-| Evaluate offspring | one invocation plus one evaluation per offspring |
-
-So with `population_size=8` and `mutation_rate=0.35`, a single iteration is on the
-order of 40 model calls. The controls that matter are `iterations` (a hard bound on
-total spend), `population_size` (per-iteration width) and `mutation_rate`.
-
-The haiku experiment also checks form in code before judging: a poem that is not
-5-7-5 scores zero without a model call, so the judging budget goes to poems worth
-judging.
-
-## Tracking spend
-
-Every operation carries an
-[`LLMMetadata`](api.md#genai_opt.optimizer_engine.operation) record with token
-counts and the model name, extracted automatically from the provider's response.
-`IterationMetadata` aggregates these into `total_tokens`, `total_cost` and
-`total_duration_seconds`, and `tokens_by_kind` breaks usage down by operation.
-
-Cost is the one field nothing fills in automatically, because per-token pricing is
-provider- and plan-specific. Token counts are recorded for you; set
-`LLMMetadata.cost` yourself if you want the cost totals to be non-zero.
-
-Both the terminal controller and the checkpoint summary report tokens and cost per
-phase, so a run's usage is visible while it happens and after it finishes.
-
-## Running without spending anything
-
-Pass a stub chat model to `build_haiku_experiment` instead of calling
-`run_haiku_experiment`. Because every genome operation is injected as a function,
-no real provider is required — this is exactly how the test suite exercises the
-LLM-backed paths. For engine behavior unrelated to prompts, use
-`experiments.float_genome.FloatGenome` in the repository checkout, which needs
-no network access at all.
+Pass a stub chat model to `build_haiku_experiment()` to test prompt operations
+without making requests. To try the engine without a model at all, use
+[First Experiment](getting-started.md) or
+[Build Your Own Experiment](custom-experiment.md).

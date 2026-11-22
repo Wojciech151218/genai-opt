@@ -9,8 +9,8 @@ Anything exported from a package's `__all__` and reachable without touching an
 underscore-prefixed name:
 
 - `genai_opt.__version__`
-- everything in `genai_opt.optimizer_engine`
-- everything in `genai_opt.adapters` and its adapter packages
+- names exported by `genai_opt.optimizer_engine`
+- names exported by `genai_opt.adapters` and its adapter packages
 
 The top-level `experiments/` directory in the repository is illustrative only
 and is not part of the installed package or the compatibility promise.
@@ -40,8 +40,8 @@ cases and the errors they raise.
 3.11 and newer. Dropping a Python version is treated as a breaking change and
 requires a major version bump.
 
-Every supported version is tested in CI on each pull request, and the release
-pipeline reruns those checks before publishing.
+CI tests Python 3.11, 3.12, and 3.13, and the release pipeline reruns those
+checks before publishing.
 
 ## Platform support
 

@@ -18,27 +18,43 @@ is what makes a checkpoint safe to resume without repeating completed work.
 
 ## `run()` versus `step()`
 
-`run()` is the ordinary entry point. It owns the event loop, loops until the
-convergence criterion is satisfied, and returns the final population:
-
-```python
-population = engine.run()
-```
+`engine.run()` is the ordinary entry point. It owns the event loop, loops
+until the convergence criterion is satisfied, and returns the final population.
 
 Because it calls `asyncio.run()` internally, it cannot be used from inside a
 running event loop. In a notebook, a web handler, or any other async context,
-drive `step()` yourself instead:
+await `step()` yourself instead. In this example from a source checkout, the
+caller drives exactly one iteration and manages the controller lifecycle:
 
 ```python
-while engine._state.phase is not IterationPhase.EVALUATE_POPULATION or not engine.convergence_criterion(
-    engine.population, engine.iteration
-):
-    metadata = await engine.step()
+import asyncio
+
+from experiments.simple_experiment import build_simple_experiment
+from genai_opt.optimizer_engine import Engine
+
+
+async def run_one_iteration() -> None:
+    engine: Engine[float, float] = build_simple_experiment(websocket_port=0).build()
+    controller = engine.experiment_controller
+    await controller.setup()
+    try:
+        while engine.iteration < 1:
+            await engine.step()
+        print(engine.iteration)
+        #> 1
+    finally:
+        await controller.teardown()
+
+
+if __name__ == "__main__":
+    asyncio.run(run_one_iteration())
 ```
 
 Driving `step()` directly is also how you interleave the engine with your own
 work: it returns the metadata for the phase that just ran, so you can inspect
-fitness, token usage and cost after each one and stop early on your own terms.
+fitness, token usage and cost after each one. Unlike `run()`, a direct call to
+`step()` does not apply the convergence criterion. Your loop decides when to
+stop. Port `0` lets the operating system choose a free local port.
 
 ## Convergence is only checked between iterations
 
@@ -47,6 +63,6 @@ phase is `EVALUATE_POPULATION`. A criterion that becomes true midway through an
 iteration therefore takes effect once the remaining phases have finished, so a
 generation is never left half-built.
 
-To stop sooner than that, pause the run through an
-[experiment controller](api.md#experiment-control), which takes effect before the
-next phase begins.
+To suspend a run, use an [experiment controller](api.md#experiment-control).
+The engine checks for a pause before the next phase; a controller can also wait
+at its callbacks during a phase.

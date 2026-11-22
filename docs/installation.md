@@ -16,7 +16,8 @@ print(version)
 #> 0.3.1
 ```
 
-The installed package includes the library. To run the bundled examples,
+The installed package includes the library and is enough to
+[build your own experiment](custom-experiment.md). To run the bundled examples,
 including the [First Experiment](getting-started.md), use a repository checkout.
 
 ## Install from source

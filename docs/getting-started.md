@@ -1,7 +1,9 @@
 # First Experiment
 
-Run the bundled numeric optimizer and inspect its final population. The
-example requires a source checkout, not model credentials.
+Run a bundled numeric demo and inspect its final population. This demo uses
+the library to evolve numbers toward a target; your own experiment can use a
+different representation and scoring rule. The demo requires a source checkout,
+not model credentials.
 
 ## Basic Usage
 
@@ -54,17 +56,19 @@ old population. The returned population has evaluated fitness values.
 | `iterations` | `int` | `10` | Number of iterations to run. |
 | `mutation_rate` | `float` | `0.2` | Probability of mutating each offspring, not the size of its numeric change. |
 | `population_size` | `int` | `20` | Number of candidates per generation. |
-| `checkpoint_db` | `str | Path | None` | `.checkpoints/simple_experiment.db` | SQLite path; `None` disables persistence. |
+| `checkpoint_db` | `str\|Path\|None` | `.checkpoints/simple_experiment.db` | SQLite path; `None` disables persistence. |
 | `launch_ui` | `bool` | `False` | Start the optional dashboard. |
 
 Omit `checkpoint_db=None` to save state at the default path. Reusing that
-path loads the saved experiment instead of starting fresh. The other values
-are not a guarantee that fitness will improve on every iteration.
+path resumes the saved numeric experiment, if present. If it has already reached
+the requested iteration limit, the runner returns the saved population without
+creating a new generation. The best fitness is not guaranteed to improve on
+every iteration: the demo replaces the whole population with offspring.
 
 ## Edge Cases
 
-A zero-sized population can be returned if zero iterations are requested.
-Choosing its best genome raises `ValueError` in `max()`:
+With both `iterations=0` and `population_size=0`, the runner returns an empty
+population. Choosing its best genome raises `ValueError` in `max()`:
 
 ```python
 from experiments.simple_experiment import run_simple_experiment
@@ -88,3 +92,8 @@ except ValueError as error:
 !!! warning "Port already in use"
     A second experiment using `localhost:8765` at the same time cannot
     start its WebSocket server. Stop the other run before retrying.
+
+## Next Experiment
+
+[Build your own experiment](custom-experiment.md) to replace the demo's candidate
+representation and scoring rule with ones you define.

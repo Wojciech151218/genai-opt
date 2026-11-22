@@ -38,8 +38,9 @@ best_genome, best_fitness = max(population.get_genome_fitness(), key=lambda item
 print(best_genome.phenotype, best_fitness)
 ```
 
-Start with the [documentation](docs/index.md), including installation and a
-step-by-step first experiment.
+Start with the [documentation](docs/index.md): [run the numeric demo](docs/getting-started.md),
+[build your own experiment](docs/custom-experiment.md), or
+[see how to optimize a system prompt](docs/haiku.md).
 
 ## Development
 

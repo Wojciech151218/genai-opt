@@ -37,22 +37,39 @@ extra_css:
 nav:
   - Welcome: index.md
   - Installation: installation.md
-  - First Experiment: getting-started.md
-
-exclude_docs: |
-  /api-stability.md
-  /api.md
-  /checkpoints.md
-  /development.md
-  /llm-credentials-and-cost.md
-  /phases.md
-  /releasing.md
-  /sqlite-checkpointer.md
-  /web-dashboard.md
-  /websocket-controller.md
+  - Tutorials:
+      - First Experiment: getting-started.md
+      - Build Your Own Experiment: custom-experiment.md
+      - Optimize a Prompt: haiku.md
+  - Guides:
+      - Iteration Phases: phases.md
+      - Checkpoints and Resuming: checkpoints.md
+      - SQLite Checkpointer: sqlite-checkpointer.md
+      - WebSocket Controller: websocket-controller.md
+      - Web Dashboard: web-dashboard.md
+      - LLM Credentials and Cost: llm-credentials-and-cost.md
+  - Reference:
+      - API Reference: api.md
+      - API Stability: api-stability.md
+  - Contributing:
+      - Development: development.md
+      - Releasing: releasing.md
 
 plugins:
   - search
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_source: false
+            show_root_heading: true
+            show_signature_annotations: true
+            separate_signature: true
+            members_order: source
+            filters: ["!^_"]
 
 markdown_extensions:
   - admonition

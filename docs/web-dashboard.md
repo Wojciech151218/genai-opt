@@ -13,16 +13,15 @@ The dashboard resides in the `dashboard/` directory and connects to two lightwei
 
 ## Interface Styles & Themes
 
-The header includes an instant style switcher (`data-style`) and a Dark/Light theme toggle (`data-theme`), giving users **4 visual combinations** persisted automatically in `localStorage`:
-
-1. **Liquid Glass (`glass`)**: Immersive glassmorphism layout featuring translucent frosted panels (`backdrop-filter: blur()`), dynamic ambient background orbs reflecting engine state, and smooth card transitions similar to macOS and iOS systems theme.
-2. **Modern Developer (`modern`)**: Clean, full-bleed analytical workspace inspired by Google Colab, Google Drive, and TensorBoard — flat surfaces, hairline borders, zero GPU blur or decorative animations, Google Blue / TensorFlow Amber accents, and `JetBrains Mono` code cells for `Phenotype (JSON)` and `Invocation Output`.
+The header lets you switch between the Liquid Glass and Modern Developer
+layouts and between light and dark themes. Preferences are stored locally in
+the browser.
 
 ## Views & Capabilities
 
 ### 1. Live Monitor
 
-- **Engine Controls**: Pause (`pausing` -> `paused`) and resume active optimization runs safely between phases/operations.
+- **Engine Controls**: Request pause or resume for the connected run. A pause does not cancel work in the current phase.
 - **Live Telemetry**: Displays active iteration, population size, and human-readable phase names.
 - **Structured Population Cards**: Renders each genome's `Fitness` badge, formatted `Phenotype (JSON)`, and `Invocation Output` live.
 - **Operations Feed**: Streams individual genome/LLM operations and execution durations.
@@ -38,21 +37,25 @@ The header includes an instant style switcher (`data-style`) and a Dark/Light th
 
 ### Automatically with an Experiment
 
-Call `.start_dashboard()` on `ExperimentBuilder` so `Engine.run()` starts and stops both the Vite UI and the SQLite History API automatically:
+From a source checkout with Node.js and npm installed, run the bundled numeric
+demo with its dashboard enabled:
 
-```python
-builder = build_haiku_experiment(llm)
-builder.start_dashboard()
-engine = builder.build().from_checkpoint()
-await engine.run()
+```bash
+python -m experiments.simple_experiment
 ```
+
+For your own experiment, configure a `WebSocketExperimentController` and call
+`builder.start_dashboard()` before `builder.build().run()`. The dashboard
+process and SQLite history API run alongside the experiment. The numeric
+example can finish before you have time to open the live view; use standalone
+mode to browse its saved checkpoints afterward.
 
 ### Standalone Mode (Browsing Saved Databases Without Running an Engine)
 
 Launch the dashboard and SQLite History API server directly without invoking any LLM calls:
 
 ```bash
-PYTHONPATH=src python3 -m genai_opt.optimizer_engine.dashboard
+python -m genai_opt.optimizer_engine.dashboard
 ```
 
 Then open `http://localhost:5173` in your browser.

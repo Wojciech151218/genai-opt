@@ -8,8 +8,9 @@ uploads to PyPI and creates a GitHub release; nothing is published by hand.
 These steps have to be done once, by someone with admin access to the repository
 and the PyPI project. Until they are done, a tag will fail at the publish step.
 
-1. **Reserve the name on PyPI.** `genai-opt` was unclaimed at the time of
-   writing. Create the project, or upload the first release manually to claim it.
+1. **Check project access on PyPI.** Confirm that the team can manage the
+   `genai-opt` project or configure a pending publisher if it has not yet
+   been created.
 2. **Register the Trusted Publisher.** On PyPI, under the project's *Publishing*
    settings, add a GitHub publisher with:
    - Owner: `Wojciech151218`
@@ -44,14 +45,8 @@ Only tags matching `v<major>.<minor>.<patch>` start the pipeline. A typo like
 
 ## What the pipeline does
 
-```mermaid
-flowchart TD
-    tag["Tag v1.2.3"] --> verify["Verify tag == __version__"]
-    verify --> ci["Reusable CI: 3.11/3.12/3.13 tests, lint, docs, wheel smoke test"]
-    ci --> build["Build sdist + wheel, twine check --strict"]
-    build --> pypi["Publish to PyPI via OIDC (environment: pypi)"]
-    pypi --> release["GitHub release with artifacts and notes"]
-```
+Tag, verify the version, run CI, build and check distributions, publish to
+PyPI, then create the GitHub release.
 
 Each stage exists to stop a specific failure:
 

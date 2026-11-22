@@ -6,22 +6,25 @@ difference between resuming and paying for a whole generation twice.
 
 ## Enabling checkpoints
 
-Pass a `FilesystemCheckpointer` when building the experiment, then chain
-`from_checkpoint()` onto the engine:
+Pass a `checkpointer` to `ExperimentBuilder`, then run
+`builder.build().from_checkpoint().run()`. The checkpointer saves after each
+completed phase. Work in a phase that was interrupted before its save may run
+again.
 
-```python
-from genai_opt.optimizer_engine import FilesystemCheckpointer
-
-engine = builder.build().from_checkpoint()
-```
+| Backend | What it keeps |
+| --- | --- |
+| `FilesystemCheckpointer(directory)` | The latest state and its phase summary as JSON files. |
+| [`SqliteCheckpointer(db_path, experiment_id)`](sqlite-checkpointer.md) | A history of phase checkpoints grouped by experiment ID. |
+| No checkpointer | Nothing is saved or restored. |
 
 `from_checkpoint()` is safe on a first run. When no checkpoint exists it returns
 the engine unchanged, so one code path covers both starting and resuming. The
-bundled experiments already do this, which is why calling `run_simple_experiment()`
-twice continues the earlier run rather than starting fresh. Pass
-`checkpoint_db=None` when you want a self-contained run.
+numeric demo already does this with SQLite. Once the saved iteration limit is
+reached, calling it again with the same limit returns the saved population.
+Pass `checkpoint_db=None` for a fresh, unsaved run. Use a new path or a
+different experiment ID to keep independent persisted runs separate.
 
-## What is on disk
+## Filesystem Checkpoints
 
 The checkpoint directory holds two files, both rewritten on every save.
 
@@ -37,9 +40,9 @@ finished: population size, best, worst and mean fitness, total tokens, cost,
 duration, and a per-operation breakdown. Nothing reads it back; it is there for
 you.
 
-Only the latest checkpoint is kept. Each save writes to a temporary file and
-renames it into place, so an interrupted write cannot leave a corrupt checkpoint
-behind. Keeping history is up to you — copy the directory between runs.
+Only the latest checkpoint is kept. Each file is written to a temporary file
+and then replaced. An interruption between the two replacements can leave the
+summary behind the state. Use SQLite if you need the history of completed phases.
 
 ## Restore context
 
@@ -48,22 +51,22 @@ Checkpoints are JSON, so anything that is not JSON cannot go in them. For a
 the model description and the invocation schema's import path are stored, but the
 chat model itself and the invoke, evaluate, mutate and crossover closures are not.
 
-Those have to be supplied again on load, as the *restore context*:
+Supply these collaborators again on load. The haiku builder, for example,
+passes `haiku_checkpoint_restore_context(llm, task_message)` to
+`FilesystemCheckpointer(restore_context=...)`.
 
-```python
-checkpointer = FilesystemCheckpointer(
-    "my-checkpoints",
-    restore_context=haiku_checkpoint_restore_context(llm, task_message),
-)
-```
+For a custom `Genome`, keep the class in an importable module. Extend
+`to_json()` if you need to store fields beyond the base payload, and implement
+`_from_json()` to rebuild the instance and call `_restore_runtime_state()`.
 
 Anything passed to `from_checkpoint(**context)` is merged over the context given
 to the constructor, so you can override individual entries at load time. A
 missing operation function raises `ValueError` naming exactly what was absent.
 
 Credentials are deliberately excluded from `llm_to_config`, so a checkpoint never
-contains an API key. The key comes from the environment when the model is rebuilt,
-or from an explicit `api_key` entry in the restore context.
+serializes an API key through that helper. The key comes from the environment
+when the model is rebuilt, or from an explicit `api_key` entry in the restore
+context. Do not put credentials into your own serialized data.
 
 ## What invalidates a checkpoint
 
@@ -81,4 +84,4 @@ edits make an existing checkpoint unreadable:
 
 These fail loudly on purpose. Silently discarding a checkpoint would quietly
 restart a run you have already paid for. When a checkpoint is genuinely obsolete,
-delete the directory and start over deliberately.
+use a new location or archive the old data before starting over.
