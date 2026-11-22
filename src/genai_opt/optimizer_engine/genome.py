@@ -147,6 +147,11 @@ class Genome(ABC, Generic[P, Inv]):
             raise ValueError("Genome has not been evaluated")
         return self._evaluation
 
+    @property
+    def has_evaluation(self) -> bool:
+        """Whether this genome already has a stored fitness value."""
+        return self._evaluation is not None
+
     def reset_invocations(self) -> None:
         """Forget the stored invocation result."""
         self._invocation = None

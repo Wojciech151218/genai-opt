@@ -57,29 +57,37 @@ class Population(Generic[P, Inv]):
         for genome in self.population:
             lambda_function(genome)
 
-    async def evaluate_population(self) -> list[Operation]:
-        """Invoke and evaluate every genome, returning all operations at once.
+    async def evaluate_population(self, *, skip_evaluated: bool = False) -> list[Operation]:
+        """Invoke and evaluate genomes, returning all operations at once.
 
         Use :meth:`evaluate_population_stream` instead when you want to observe
         or log progress while a slow LLM-backed generation is still running.
-        """
-        return [operation async for operation in self.evaluate_population_stream()]
 
-    async def evaluate_population_stream(self) -> AsyncIterator[Operation]:
-        """Yield each genome's invocation and evaluation as they complete.
+        Args:
+            skip_evaluated: Leave genomes with a stored fitness unchanged.
+        """
+        return [operation async for operation in self.evaluate_population_stream(skip_evaluated=skip_evaluated)]
+
+    async def evaluate_population_stream(self, *, skip_evaluated: bool = False) -> AsyncIterator[Operation]:
+        """Yield each selected genome's invocation and evaluation as they complete.
 
         A genome begins evaluation immediately after its own invocation. Other
         genomes continue invoking or evaluating concurrently.
 
+        When ``skip_evaluated`` is true, genomes that already have a stored
+        fitness are left untouched and produce no operations.
+
         Yields:
-            Two operations per genome, an invoke followed by an evaluate, in
-            completion order rather than population order.
+            Two operations per evaluated genome, an invoke followed by an
+            evaluate, in completion order rather than population order.
 
         Raises:
             BaseException: The first error raised by any genome. Remaining tasks
                 are cancelled before it propagates.
         """
         operations: asyncio.Queue[Operation | BaseException] = asyncio.Queue()
+
+        genomes_to_evaluate = [genome for genome in self.population if not skip_evaluated or not genome.has_evaluation]
 
         async def invoke_and_evaluate(genome: Genome[P, Inv]) -> None:
             try:
@@ -88,9 +96,9 @@ class Population(Generic[P, Inv]):
             except BaseException as error:
                 await operations.put(error)
 
-        tasks = [asyncio.create_task(invoke_and_evaluate(genome)) for genome in self.population]
+        tasks = [asyncio.create_task(invoke_and_evaluate(genome)) for genome in genomes_to_evaluate]
         try:
-            for _ in range(2 * len(tasks)):
+            for _ in range(2 * len(genomes_to_evaluate)):
                 operation = await operations.get()
                 if isinstance(operation, BaseException):
                     raise operation

@@ -70,6 +70,50 @@ def test_population_evaluate_all():
     assert fitnesses[1] == pytest.approx(90.0)
 
 
+def test_population_skip_evaluated_genomes_when_requested():
+    events: list[str] = []
+    evaluated = _RecordingGenome("already-evaluated", events)
+    evaluated._set_invocation("old result")
+    evaluated._set_evaluation(7.0)
+    unevaluated = _RecordingGenome("new", events)
+    population = Population([evaluated, unevaluated])
+
+    operations = asyncio.run(population.evaluate_population(skip_evaluated=True))
+
+    assert events == ["invoke:new", "evaluate:new"]
+    assert [operation.kind for operation in operations] == ["invoke", "evaluate"]
+    assert evaluated.invocation == "old result"
+    assert evaluated.evaluation == 7.0
+    assert unevaluated.evaluation == 1.0
+
+
+def test_population_skip_evaluated_handles_empty_work_set():
+    events: list[str] = []
+    genome = _RecordingGenome("already-evaluated", events)
+    genome._set_invocation("stored result")
+    genome._set_evaluation(3.0)
+
+    operations = asyncio.run(Population([genome]).evaluate_population(skip_evaluated=True))
+
+    assert operations == []
+    assert events == []
+    assert genome.evaluation == 3.0
+
+
+def test_population_evaluates_stored_genomes_by_default():
+    events: list[str] = []
+    genome = _RecordingGenome("same", events)
+    genome._set_invocation("old result")
+    genome._set_evaluation(7.0)
+
+    operations = asyncio.run(Population([genome]).evaluate_population())
+
+    assert events == ["invoke:same", "evaluate:same"]
+    assert [operation.kind for operation in operations] == ["invoke", "evaluate"]
+    assert genome.invocation == "same"
+    assert genome.evaluation == 1.0
+
+
 def test_population_evaluates_a_genome_before_other_invocations_finish():
     async def evaluate_stream() -> list[Operation]:
         events: list[str] = []

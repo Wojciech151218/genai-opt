@@ -43,6 +43,7 @@ def build_simple_experiment(
     experiment_id: str = "simple_experiment",
     websocket_host: str = "localhost",
     websocket_port: int = 8765,
+    reuse_evaluations: bool = False,
 ) -> ExperimentBuilder:
     checkpointer = (
         SqliteCheckpointer(db_path=checkpoint_db, experiment_id=experiment_id) if checkpoint_db is not None else None
@@ -60,6 +61,7 @@ def build_simple_experiment(
         ),
         checkpointer=checkpointer,
         experiment_controller=WebSocketExperimentController(host=websocket_host, port=websocket_port),
+        reuse_evaluations=reuse_evaluations,
     )
 
 
@@ -71,6 +73,7 @@ def run_simple_experiment(
     checkpoint_db: str | Path | None = ".checkpoints/simple_experiment.db",
     *,
     launch_ui: bool = False,
+    reuse_evaluations: bool = False,
 ) -> Population[float, float]:
     builder = build_simple_experiment(
         target=target,
@@ -78,6 +81,7 @@ def run_simple_experiment(
         mutation_rate=mutation_rate,
         population_size=population_size,
         checkpoint_db=checkpoint_db,
+        reuse_evaluations=reuse_evaluations,
     )
     if launch_ui:
         builder.start_dashboard()

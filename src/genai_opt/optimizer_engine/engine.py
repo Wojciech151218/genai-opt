@@ -44,6 +44,9 @@ class Engine(Generic[P, Inv]):
         experiment_controller: Observes phases and operations, and can pause the
             run. Defaults to
             :class:`~genai_opt.optimizer_engine.experiment_controller.NullExperimentController`.
+        reuse_evaluations: Skip invoking and evaluating genomes that already have
+            both a stored invocation result and fitness. Defaults to ``False`` to
+            preserve fresh-sample evaluation behavior.
     """
 
     def __init__(
@@ -54,6 +57,7 @@ class Engine(Generic[P, Inv]):
         reproduction_policy: ReproductionPolicy,
         checkpointer: Checkpointer[P, Inv] | None = None,
         experiment_controller: ExperimentController | None = None,
+        reuse_evaluations: bool = False,
     ):
         self._state = EngineState(population=population)
 
@@ -62,6 +66,7 @@ class Engine(Generic[P, Inv]):
         self.mutation_policy = mutation_policy
         self.checkpointer = checkpointer or NullCheckpointer()
         self.experiment_controller = experiment_controller or NullExperimentController()
+        self.reuse_evaluations = reuse_evaluations
         self._launch_ui = False
 
     @property
@@ -116,7 +121,7 @@ class Engine(Generic[P, Inv]):
         phase: IterationPhase,
     ) -> list[Operation]:
         operations: list[Operation] = []
-        async for operation in population.evaluate_population_stream():
+        async for operation in population.evaluate_population_stream(skip_evaluated=self.reuse_evaluations):
             operations.append(operation)
             await self.experiment_controller.control_operation(self.iteration, phase, operation)
         return operations

@@ -254,6 +254,7 @@ def build_haiku_experiment(
     population_size: int = DEFAULT_POPULATION_SIZE,
     shared_task: HumanMessage | None = None,
     checkpoint_dir: str | Path | None = None,
+    reuse_evaluations: bool = False,
 ) -> ExperimentBuilder[SimpleSystemPromptPhenotype, HaikuOutput]:
     """Assemble the experiment without running it.
 
@@ -280,6 +281,7 @@ def build_haiku_experiment(
         if checkpoint_dir
         else None,
         experiment_controller=TerminalController(),
+        reuse_evaluations=reuse_evaluations,
     )
 
 
@@ -296,6 +298,7 @@ def run_haiku_experiment(
     websocket_host: str = "localhost",
     websocket_port: int = 8765,
     launch_ui: bool = False,
+    reuse_evaluations: bool = False,
 ) -> Population[SimpleSystemPromptPhenotype, HaikuOutput]:
     chat_model = llm or init_chat_model(
         model,
@@ -328,6 +331,7 @@ def run_haiku_experiment(
             genome=restore_genome,
         ),
         experiment_controller=WebSocketExperimentController(host=websocket_host, port=websocket_port),
+        reuse_evaluations=reuse_evaluations,
     )
     if launch_ui:
         builder.start_dashboard()
